@@ -14,6 +14,8 @@
             --card-bg: #ffffff;
             --text-color: #333;
             --border-color: #ddd;
+            --toggle-bg: #e0e0e0;
+            --toggle-bg-active: #4a6fa5;
         }
 
         * {
@@ -173,6 +175,77 @@
             margin: 0;
         }
 
+        .pre-wrap {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .options-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--toggle-bg);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--toggle-bg-active);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
         .nav-buttons {
             display: flex;
             justify-content: center;
@@ -229,6 +302,11 @@
             .nav-buttons {
                 flex-wrap: wrap;
             }
+            
+            .options-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -254,6 +332,24 @@
         <div class="viewer-header">
             <div class="viewer-title" id="viewer-title">JSON Objects</div>
             <div class="viewer-counter" id="viewer-counter">Object 0 of 0</div>
+        </div>
+        
+        <div class="options-container">
+            <div class="toggle-container">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="word-wrap-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">Enable Word Wrap</span>
+            </div>
+            
+            <div class="toggle-container">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-parse-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">Auto-Parse JSON Strings</span>
+            </div>
         </div>
         
         <div class="code-container">
@@ -285,9 +381,29 @@
             const nextBtn = document.getElementById('next-btn');
             const lastBtn = document.getElementById('last-btn');
             const dropArea = document.getElementById('drop-area');
+            const wordWrapToggle = document.getElementById('word-wrap-toggle');
+            const autoParseToggle = document.getElementById('auto-parse-toggle');
             
             let jsonObjects = [];
+            let rawJsonObjects = []; // Store original unparsed objects
             let currentIndex = 0;
+            
+            // Toggle word wrap
+            wordWrapToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    jsonContent.parentElement.classList.add('pre-wrap');
+                } else {
+                    jsonContent.parentElement.classList.remove('pre-wrap');
+                }
+            });
+            
+            // Toggle auto-parse JSON strings
+            autoParseToggle.addEventListener('change', function() {
+                // Re-render the current object when toggle changes
+                if (jsonObjects.length > 0) {
+                    updateView();
+                }
+            });
             
             // Handle file selection
             fileInput.addEventListener('change', function(event) {
@@ -348,10 +464,13 @@
                     try {
                         // Parse JSONL (each line is a separate JSON object)
                         const content = e.target.result;
-                        jsonObjects = content
+                        rawJsonObjects = content
                             .split('\n')
                             .filter(line => line.trim() !== '')
                             .map(line => JSON.parse(line));
+                        
+                        // Clone the objects for original viewing
+                        jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
                         
                         if (jsonObjects.length === 0) {
                             alert('No valid JSON objects found in the file.');
@@ -434,10 +553,59 @@
                 }
             });
             
+            // Function to try parsing JSON strings in an object
+            function parseJsonStrings(obj) {
+                if (!autoParseToggle.checked) return obj;
+                
+                // Deep clone the object to avoid modifying the original
+                const clone = JSON.parse(JSON.stringify(obj));
+                
+                // Recursively traverse the object and try to parse JSON strings
+                function traverse(obj) {
+                    if (!obj || typeof obj !== 'object') return;
+                    
+                    Object.keys(obj).forEach(key => {
+                        // If it's a string, try to parse it as JSON
+                        if (typeof obj[key] === 'string') {
+                            let value = obj[key].trim();
+                            
+                            // Check for various JSON string patterns
+                            // First try: content wrapped in ```json{...}``` or ```{...}```
+                            let match = value.match(/```(?:json)?(.*?)```/s);
+                            if (match) {
+                                value = match[1].trim();
+                            }
+                            
+                            // Now try to parse it if it looks like JSON (starts and ends with {} or [])
+                            if ((value.startsWith('{') && value.endsWith('}')) || 
+                                (value.startsWith('[') && value.endsWith(']'))) {
+                                try {
+                                    obj[key] = JSON.parse(value);
+                                } catch (e) {
+                                    // If parsing fails, keep the original string
+                                }
+                            }
+                        } else if (obj[key] && typeof obj[key] === 'object') {
+                            // Recursively traverse nested objects and arrays
+                            traverse(obj[key]);
+                        }
+                    });
+                }
+                
+                traverse(clone);
+                return clone;
+            }
+            
             // Update the view with current JSON object
             function updateView() {
-                const jsonObject = jsonObjects[currentIndex];
-                jsonContent.textContent = JSON.stringify(jsonObject, null, 2);
+                // Get the raw object first
+                const rawJsonObject = rawJsonObjects[currentIndex];
+                
+                // Apply JSON string parsing if enabled
+                const processedJsonObject = parseJsonStrings(rawJsonObject);
+                
+                // Update display
+                jsonContent.textContent = JSON.stringify(processedJsonObject, null, 2);
                 hljs.highlightElement(jsonContent);
                 viewerCounter.textContent = `Object ${currentIndex + 1} of ${jsonObjects.length}`;
             }
