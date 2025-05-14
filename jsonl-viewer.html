@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSONL Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --primary-hover: #3a5a8c;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        .upload-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        #drop-area {
+            outline: 2px dashed #ccc;
+            outline-offset: -10px;
+            position: relative;
+        }
+        
+        #drop-area.highlight {
+            outline-color: var(--primary-color);
+            background-color: rgba(74, 111, 165, 0.05);
+        }
+        
+        .drop-instruction {
+            margin-top: 15px;
+            color: #777;
+            font-size: 1rem;
+        }
+        
+        .privacy-notice {
+            margin-top: 20px;
+            color: #555;
+            font-size: 0.9rem;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .privacy-icon {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-input-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .file-input-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .file-name {
+            margin-top: 10px;
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        .viewer-container {
+            display: none;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .viewer-title {
+            font-size: 1.4rem;
+            color: var(--primary-color);
+        }
+
+        .viewer-counter {
+            font-size: 1rem;
+            color: #777;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .code-container {
+            background-color: #1e1e1e;
+            border-radius: 6px;
+            overflow: auto;
+            margin-bottom: 20px;
+            max-height: 500px;
+        }
+
+        pre {
+            padding: 15px;
+            margin: 0;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .nav-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .instructions {
+            background-color: rgba(245, 247, 250, 0.8);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .shortcut {
+            background-color: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            .viewer-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .nav-buttons {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>JSONL Viewer</h1>
+        <p>Upload a JSONL file to view and navigate through each JSON object. <br>Your data never leaves your device - all processing happens locally in your browser.</p>
+    </header>
+
+    <div class="upload-container" id="drop-area">
+        <div class="file-input-wrapper">
+            <button class="file-input-btn">Choose JSONL File</button>
+            <input type="file" class="file-input" id="file-input" accept=".jsonl, .json">
+        </div>
+        <div class="file-name" id="file-name">No file selected</div>
+        <div class="drop-instruction">or drag & drop your file here</div>
+        <div class="privacy-notice">
+            <span class="privacy-icon">🔒</span> Your data stays on your device - nothing is uploaded to any server
+        </div>
+    </div>
+
+    <div class="viewer-container" id="viewer-container">
+        <div class="viewer-header">
+            <div class="viewer-title" id="viewer-title">JSON Objects</div>
+            <div class="viewer-counter" id="viewer-counter">Object 0 of 0</div>
+        </div>
+        
+        <div class="code-container">
+            <pre><code id="json-content" class="json">Please upload a JSONL file to view content.</code></pre>
+        </div>
+        
+        <div class="nav-buttons">
+            <button class="nav-btn" id="first-btn" disabled>« First</button>
+            <button class="nav-btn" id="prev-btn" disabled>‹ Previous</button>
+            <button class="nav-btn" id="next-btn" disabled>Next ›</button>
+            <button class="nav-btn" id="last-btn" disabled>Last »</button>
+        </div>
+        
+        <div class="instructions">
+            <strong>Keyboard Shortcuts:</strong> Use <span class="shortcut">←</span> for previous, <span class="shortcut">→</span> for next, <span class="shortcut">Home</span> for first, and <span class="shortcut">End</span> for last item.
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const fileName = document.getElementById('file-name');
+            const viewerContainer = document.getElementById('viewer-container');
+            const viewerTitle = document.getElementById('viewer-title');
+            const viewerCounter = document.getElementById('viewer-counter');
+            const jsonContent = document.getElementById('json-content');
+            const firstBtn = document.getElementById('first-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const lastBtn = document.getElementById('last-btn');
+            const dropArea = document.getElementById('drop-area');
+            
+            let jsonObjects = [];
+            let currentIndex = 0;
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function(event) {
+                handleFileSelection(event.target.files[0]);
+            });
+            
+            // Drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    handleFileSelection(files[0]);
+                }
+            }
+            
+            function handleFileSelection(file) {
+                if (!file) return;
+                
+                // Check file extension
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                if (fileExtension !== 'jsonl' && fileExtension !== 'json') {
+                    alert('Please select a .jsonl or .json file');
+                    return;
+                }
+                
+                fileName.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        // Parse JSONL (each line is a separate JSON object)
+                        const content = e.target.result;
+                        jsonObjects = content
+                            .split('\n')
+                            .filter(line => line.trim() !== '')
+                            .map(line => JSON.parse(line));
+                        
+                        if (jsonObjects.length === 0) {
+                            alert('No valid JSON objects found in the file.');
+                            return;
+                        }
+                        
+                        // Show viewer and display first object
+                        viewerContainer.style.display = 'block';
+                        viewerTitle.textContent = `${file.name} - JSON Objects`;
+                        currentIndex = 0;
+                        updateView();
+                        
+                        // Enable/disable navigation buttons
+                        updateNavButtons();
+                    } catch (error) {
+                        alert(`Error parsing the file: ${error.message}`);
+                    }
+                };
+                reader.readAsText(file);
+            }
+            
+            // Navigation buttons
+            firstBtn.addEventListener('click', () => {
+                currentIndex = 0;
+                updateView();
+                updateNavButtons();
+            });
+            
+            prevBtn.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateView();
+                    updateNavButtons();
+                }
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                if (currentIndex < jsonObjects.length - 1) {
+                    currentIndex++;
+                    updateView();
+                    updateNavButtons();
+                }
+            });
+            
+            lastBtn.addEventListener('click', () => {
+                currentIndex = jsonObjects.length - 1;
+                updateView();
+                updateNavButtons();
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(event) {
+                if (viewerContainer.style.display !== 'block') return;
+                
+                switch (event.key) {
+                    case 'ArrowLeft':
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                            updateView();
+                            updateNavButtons();
+                        }
+                        break;
+                    case 'ArrowRight':
+                        if (currentIndex < jsonObjects.length - 1) {
+                            currentIndex++;
+                            updateView();
+                            updateNavButtons();
+                        }
+                        break;
+                    case 'Home':
+                        currentIndex = 0;
+                        updateView();
+                        updateNavButtons();
+                        break;
+                    case 'End':
+                        currentIndex = jsonObjects.length - 1;
+                        updateView();
+                        updateNavButtons();
+                        break;
+                }
+            });
+            
+            // Update the view with current JSON object
+            function updateView() {
+                const jsonObject = jsonObjects[currentIndex];
+                jsonContent.textContent = JSON.stringify(jsonObject, null, 2);
+                hljs.highlightElement(jsonContent);
+                viewerCounter.textContent = `Object ${currentIndex + 1} of ${jsonObjects.length}`;
+            }
+            
+            // Update navigation buttons enabled/disabled states
+            function updateNavButtons() {
+                firstBtn.disabled = currentIndex === 0;
+                prevBtn.disabled = currentIndex === 0;
+                nextBtn.disabled = currentIndex === jsonObjects.length - 1;
+                lastBtn.disabled = currentIndex === jsonObjects.length - 1;
+            }
+        });
+    </script>
+</body>
+</html>
