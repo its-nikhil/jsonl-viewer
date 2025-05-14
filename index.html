@@ -168,6 +168,82 @@
             overflow: auto;
             margin-bottom: 20px;
             max-height: 500px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(74, 111, 165, 0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 1.2rem;
+            transition: background-color 0.2s;
+        }
+
+        .fullscreen-btn:hover {
+            background-color: rgba(74, 111, 165, 1);
+        }
+
+        .fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            max-height: none;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            border-radius: 0;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .fullscreen-mode .fullscreen-btn {
+            top: 15px;
+            right: 15px;
+        }
+
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            padding: 20px;
+        }
+
+        .fs-navigation {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background-color: rgba(74, 111, 165, 0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .fs-navigation.active {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         pre {
@@ -246,6 +322,45 @@
             user-select: none;
         }
 
+        .sort-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sort-key-select {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: white;
+            font-size: 0.9rem;
+            min-width: 180px;
+        }
+
+        .sort-direction-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .sort-direction-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .sort-direction-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
         .nav-buttons {
             display: flex;
             justify-content: center;
@@ -292,6 +407,16 @@
             font-family: monospace;
         }
 
+        .error-message {
+            color: #e74c3c;
+            background-color: #fde2e2;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .viewer-header {
                 flex-direction: column;
@@ -328,6 +453,8 @@
         </div>
     </div>
 
+    <div class="error-message" id="error-display"></div>
+
     <div class="viewer-container" id="viewer-container">
         <div class="viewer-header">
             <div class="viewer-title" id="viewer-title">JSON Objects</div>
@@ -350,10 +477,38 @@
                 </label>
                 <span class="toggle-label">Auto-Parse JSON Strings</span>
             </div>
+            
+            <div class="sort-container">
+                <label for="sort-key-select" class="toggle-label">Sort by key:</label>
+                <select id="sort-key-select" class="sort-key-select">
+                    <option value="">None (Original Order)</option>
+                </select>
+                <button id="sort-direction-btn" class="sort-direction-btn" title="Toggle sort direction" disabled>
+                    <span id="sort-direction-icon">↓</span>
+                </button>
+                <div class="toggle-container" style="margin-left: 10px;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="numeric-sort-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Sort as Numbers</span>
+                </div>
+            </div>
         </div>
         
-        <div class="code-container">
+        <div class="code-container" id="code-container">
+            <button id="fullscreen-btn" class="fullscreen-btn" title="Toggle fullscreen">⛶</button>
             <pre><code id="json-content" class="json">Please upload a JSONL file to view content.</code></pre>
+        </div>
+        
+        <div class="fullscreen-overlay" id="fullscreen-overlay">
+            <div class="fs-navigation" id="fs-navigation">
+                <button class="nav-btn" id="fs-first-btn">« First</button>
+                <button class="nav-btn" id="fs-prev-btn">‹ Previous</button>
+                <span id="fs-counter" style="color: white;">0 of 0</span>
+                <button class="nav-btn" id="fs-next-btn">Next ›</button>
+                <button class="nav-btn" id="fs-last-btn">Last »</button>
+            </div>
         </div>
         
         <div class="nav-buttons">
@@ -370,6 +525,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM Element References
             const fileInput = document.getElementById('file-input');
             const fileName = document.getElementById('file-name');
             const viewerContainer = document.getElementById('viewer-container');
@@ -383,50 +539,255 @@
             const dropArea = document.getElementById('drop-area');
             const wordWrapToggle = document.getElementById('word-wrap-toggle');
             const autoParseToggle = document.getElementById('auto-parse-toggle');
+            const sortKeySelect = document.getElementById('sort-key-select');
+            const sortDirectionBtn = document.getElementById('sort-direction-btn');
+            const sortDirectionIcon = document.getElementById('sort-direction-icon');
+            const numericSortToggle = document.getElementById('numeric-sort-toggle');
+            const errorDisplay = document.getElementById('error-display');
+            const codeContainer = document.getElementById('code-container');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const fullscreenOverlay = document.getElementById('fullscreen-overlay');
+            const fsNavigation = document.getElementById('fs-navigation');
+            const fsFirstBtn = document.getElementById('fs-first-btn');
+            const fsPrevBtn = document.getElementById('fs-prev-btn');
+            const fsNextBtn = document.getElementById('fs-next-btn');
+            const fsLastBtn = document.getElementById('fs-last-btn');
+            const fsCounter = document.getElementById('fs-counter');
             
+            // State Variables
             let jsonObjects = [];
             let rawJsonObjects = []; // Store original unparsed objects
             let currentIndex = 0;
+            let sortDirection = 'asc'; // Default sort direction
+            let availableKeys = new Set();
+            let isFullscreen = false;
+            
+            // Fullscreen toggle
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', function() {
+                    try {
+                        toggleFullscreen();
+                    } catch (error) {
+                        showError(`Fullscreen toggle error: ${error.message}`);
+                    }
+                });
+                
+                // Hide fullscreen button initially if no content
+                fullscreenBtn.style.display = 'none';
+            }
+            
+            // Fullscreen navigation buttons
+            if (fsFirstBtn) {
+                fsFirstBtn.addEventListener('click', function() {
+                    try {
+                        currentIndex = 0;
+                        updateView();
+                        updateNavButtons();
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            if (fsPrevBtn) {
+                fsPrevBtn.addEventListener('click', function() {
+                    try {
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                            updateView();
+                            updateNavButtons();
+                        }
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            if (fsNextBtn) {
+                fsNextBtn.addEventListener('click', function() {
+                    try {
+                        if (currentIndex < jsonObjects.length - 1) {
+                            currentIndex++;
+                            updateView();
+                            updateNavButtons();
+                        }
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            if (fsLastBtn) {
+                fsLastBtn.addEventListener('click', function() {
+                    try {
+                        currentIndex = jsonObjects.length - 1;
+                        updateView();
+                        updateNavButtons();
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            // Toggle fullscreen mode
+            function toggleFullscreen() {
+                isFullscreen = !isFullscreen;
+                
+                if (isFullscreen) {
+                    // Enter fullscreen
+                    codeContainer.classList.add('fullscreen-mode');
+                    fullscreenOverlay.style.display = 'block';
+                    fsNavigation.classList.add('active');
+                    fullscreenBtn.innerHTML = '×';
+                    fullscreenBtn.title = 'Exit fullscreen';
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling
+                } else {
+                    // Exit fullscreen
+                    codeContainer.classList.remove('fullscreen-mode');
+                    fullscreenOverlay.style.display = 'none';
+                    fsNavigation.classList.remove('active');
+                    fullscreenBtn.innerHTML = '⛶';
+                    fullscreenBtn.title = 'Toggle fullscreen';
+                    document.body.style.overflow = ''; // Restore scrolling
+                }
+                
+                // Re-apply syntax highlighting which might be affected by the DOM changes
+                setTimeout(() => {
+                    try {
+                        hljs.highlightElement(jsonContent);
+                    } catch (error) {
+                        console.error(`Fullscreen highlight error: ${error.message}`);
+                    }
+                }, 100);
+            }
+            
+            // Add ESC key handler for fullscreen
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && isFullscreen) {
+                    toggleFullscreen();
+                }
+            });
+            
+            // Error handling function
+            function showError(message) {
+                errorDisplay.textContent = `Error: ${message}`;
+                errorDisplay.style.display = 'block';
+                console.error(`Error: ${message}`);
+            }
+            
+            function hideError() {
+                errorDisplay.style.display = 'none';
+            }
             
             // Toggle word wrap
-            wordWrapToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    jsonContent.parentElement.classList.add('pre-wrap');
-                } else {
-                    jsonContent.parentElement.classList.remove('pre-wrap');
-                }
-            });
+            if (wordWrapToggle) {
+                wordWrapToggle.addEventListener('change', function() {
+                    try {
+                        if (this.checked) {
+                            jsonContent.parentElement.classList.add('pre-wrap');
+                        } else {
+                            jsonContent.parentElement.classList.remove('pre-wrap');
+                        }
+                    } catch (error) {
+                        showError(`Word wrap toggle error: ${error.message}`);
+                    }
+                });
+            }
             
             // Toggle auto-parse JSON strings
-            autoParseToggle.addEventListener('change', function() {
-                // Re-render the current object when toggle changes
-                if (jsonObjects.length > 0) {
-                    updateView();
-                }
-            });
+            if (autoParseToggle) {
+                autoParseToggle.addEventListener('change', function() {
+                    try {
+                        // Re-render the current object when toggle changes
+                        if (jsonObjects.length > 0) {
+                            updateView();
+                        }
+                    } catch (error) {
+                        showError(`Auto-parse toggle error: ${error.message}`);
+                    }
+                });
+            }
+            
+            // Handle sort key selection
+            if (sortKeySelect) {
+                sortKeySelect.addEventListener('change', function() {
+                    try {
+                        sortJsonObjects();
+                        currentIndex = 0; // Reset to first object after sorting
+                        updateView();
+                        updateNavButtons();
+                    } catch (error) {
+                        showError(`Sort key selection error: ${error.message}`);
+                    }
+                });
+            }
+            
+            // Handle sort direction toggle
+            if (sortDirectionBtn) {
+                sortDirectionBtn.addEventListener('click', function() {
+                    try {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                        sortDirectionIcon.textContent = sortDirection === 'asc' ? '↓' : '↑';
+                        sortJsonObjects();
+                        updateView();
+                    } catch (error) {
+                        showError(`Sort direction toggle error: ${error.message}`);
+                    }
+                });
+            }
+            
+            // Handle numeric sort toggle
+            if (numericSortToggle) {
+                numericSortToggle.addEventListener('change', function() {
+                    try {
+                        if (sortKeySelect.value) {
+                            sortJsonObjects();
+                            updateView();
+                        }
+                    } catch (error) {
+                        showError(`Numeric sort toggle error: ${error.message}`);
+                    }
+                });
+            }
             
             // Handle file selection
-            fileInput.addEventListener('change', function(event) {
-                handleFileSelection(event.target.files[0]);
-            });
+            if (fileInput) {
+                fileInput.addEventListener('change', function(event) {
+                    try {
+                        handleFileSelection(event.target.files[0]);
+                    } catch (error) {
+                        showError(`File input error: ${error.message}`);
+                    }
+                });
+            }
             
             // Drag and drop functionality
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, preventDefaults, false);
-            });
+            if (dropArea) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                dropArea.addEventListener('drop', function(e) {
+                    try {
+                        handleDrop(e);
+                    } catch (error) {
+                        showError(`File drop error: ${error.message}`);
+                    }
+                }, false);
+            }
             
             function preventDefaults(e) {
                 e.preventDefault();
                 e.stopPropagation();
             }
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, highlight, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, unhighlight, false);
-            });
             
             function highlight() {
                 dropArea.classList.add('highlight');
@@ -435,8 +796,6 @@
             function unhighlight() {
                 dropArea.classList.remove('highlight');
             }
-            
-            dropArea.addEventListener('drop', handleDrop, false);
             
             function handleDrop(e) {
                 const dt = e.dataTransfer;
@@ -449,11 +808,12 @@
             
             function handleFileSelection(file) {
                 if (!file) return;
+                hideError();
                 
                 // Check file extension
                 const fileExtension = file.name.split('.').pop().toLowerCase();
                 if (fileExtension !== 'jsonl' && fileExtension !== 'json') {
-                    alert('Please select a .jsonl or .json file');
+                    showError('Please select a .jsonl or .json file');
                     return;
                 }
                 
@@ -464,17 +824,39 @@
                     try {
                         // Parse JSONL (each line is a separate JSON object)
                         const content = e.target.result;
-                        rawJsonObjects = content
-                            .split('\n')
-                            .filter(line => line.trim() !== '')
-                            .map(line => JSON.parse(line));
+                        const lines = content.split('\n').filter(line => line.trim() !== '');
+                        
+                        // Parse each line with error handling
+                        rawJsonObjects = [];
+                        let parseErrors = 0;
+                        
+                        lines.forEach((line, index) => {
+                            try {
+                                const parsedLine = JSON.parse(line);
+                                rawJsonObjects.push(parsedLine);
+                            } catch (parseError) {
+                                parseErrors++;
+                                console.error(`Error parsing line ${index + 1}: ${parseError.message}`);
+                            }
+                        });
+                        
+                        if (parseErrors > 0) {
+                            showError(`${parseErrors} line(s) had JSON parsing errors and were skipped.`);
+                        }
+                        
+                        if (rawJsonObjects.length === 0) {
+                            showError('No valid JSON objects found in the file.');
+                            return;
+                        }
                         
                         // Clone the objects for original viewing
                         jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
                         
-                        if (jsonObjects.length === 0) {
-                            alert('No valid JSON objects found in the file.');
-                            return;
+                        // Collect available keys for sorting
+                        try {
+                            collectSortKeys();
+                        } catch (keyError) {
+                            showError(`Error analyzing object keys: ${keyError.message}`);
                         }
                         
                         // Show viewer and display first object
@@ -485,137 +867,329 @@
                         
                         // Enable/disable navigation buttons
                         updateNavButtons();
+                        
+                        // Show fullscreen button now that we have content
+                        if (fullscreenBtn) {
+                            fullscreenBtn.style.display = 'flex';
+                        }
                     } catch (error) {
-                        alert(`Error parsing the file: ${error.message}`);
+                        showError(`Error processing the file: ${error.message}`);
                     }
                 };
+                
+                reader.onerror = function() {
+                    showError('Error reading the file.');
+                };
+                
                 reader.readAsText(file);
             }
             
-            // Navigation buttons
-            firstBtn.addEventListener('click', () => {
-                currentIndex = 0;
-                updateView();
-                updateNavButtons();
-            });
-            
-            prevBtn.addEventListener('click', () => {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    updateView();
-                    updateNavButtons();
-                }
-            });
-            
-            nextBtn.addEventListener('click', () => {
-                if (currentIndex < jsonObjects.length - 1) {
-                    currentIndex++;
-                    updateView();
-                    updateNavButtons();
-                }
-            });
-            
-            lastBtn.addEventListener('click', () => {
-                currentIndex = jsonObjects.length - 1;
-                updateView();
-                updateNavButtons();
-            });
-            
-            // Keyboard navigation
-            document.addEventListener('keydown', function(event) {
-                if (viewerContainer.style.display !== 'block') return;
+            // Collect available keys for sorting
+            function collectSortKeys() {
+                availableKeys.clear();
                 
-                switch (event.key) {
-                    case 'ArrowLeft':
+                if (jsonObjects.length === 0) return;
+                
+                // Find all keys in the first 10 objects (or all if fewer)
+                const sampleSize = Math.min(10, jsonObjects.length);
+                
+                for (let i = 0; i < sampleSize; i++) {
+                    findObjectKeys(jsonObjects[i]);
+                }
+                
+                // Update the dropdown
+                updateSortKeyOptions();
+            }
+            
+            // Find all keys in an object (including nested ones)
+            function findObjectKeys(obj, prefix = '') {
+                if (!obj || typeof obj !== 'object') return;
+                
+                Object.keys(obj).forEach(key => {
+                    const fullKey = prefix ? `${prefix}.${key}` : key;
+                    availableKeys.add(fullKey);
+                    
+                    // Go one level deeper for nested objects (but not arrays)
+                    if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                        findObjectKeys(obj[key], fullKey);
+                    }
+                });
+            }
+            
+            // Update sort key dropdown options
+            function updateSortKeyOptions() {
+                // Clear current options except for the first one (None)
+                while (sortKeySelect.options.length > 1) {
+                    sortKeySelect.remove(1);
+                }
+                
+                // Add new options
+                Array.from(availableKeys).sort().forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = key;
+                    sortKeySelect.appendChild(option);
+                });
+                
+                // Enable/disable sort button
+                sortDirectionBtn.disabled = availableKeys.size === 0;
+            }
+            
+            // Navigation buttons
+            if (firstBtn) {
+                firstBtn.addEventListener('click', () => {
+                    try {
+                        currentIndex = 0;
+                        updateView();
+                        updateNavButtons();
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    try {
                         if (currentIndex > 0) {
                             currentIndex--;
                             updateView();
                             updateNavButtons();
                         }
-                        break;
-                    case 'ArrowRight':
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    try {
                         if (currentIndex < jsonObjects.length - 1) {
                             currentIndex++;
                             updateView();
                             updateNavButtons();
                         }
-                        break;
-                    case 'Home':
-                        currentIndex = 0;
-                        updateView();
-                        updateNavButtons();
-                        break;
-                    case 'End':
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            if (lastBtn) {
+                lastBtn.addEventListener('click', () => {
+                    try {
                         currentIndex = jsonObjects.length - 1;
                         updateView();
                         updateNavButtons();
-                        break;
+                    } catch (error) {
+                        showError(`Navigation error: ${error.message}`);
+                    }
+                });
+            }
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(event) {
+                if (viewerContainer.style.display !== 'block') return;
+                
+                try {
+                    switch (event.key) {
+                        case 'ArrowLeft':
+                            if (currentIndex > 0) {
+                                currentIndex--;
+                                updateView();
+                                updateNavButtons();
+                            }
+                            break;
+                        case 'ArrowRight':
+                            if (currentIndex < jsonObjects.length - 1) {
+                                currentIndex++;
+                                updateView();
+                                updateNavButtons();
+                            }
+                            break;
+                        case 'Home':
+                            currentIndex = 0;
+                            updateView();
+                            updateNavButtons();
+                            break;
+                        case 'End':
+                            currentIndex = jsonObjects.length - 1;
+                            updateView();
+                            updateNavButtons();
+                            break;
+                    }
+                } catch (error) {
+                    showError(`Keyboard navigation error: ${error.message}`);
                 }
             });
             
             // Function to try parsing JSON strings in an object
             function parseJsonStrings(obj) {
-                if (!autoParseToggle.checked) return obj;
+                if (!autoParseToggle || !autoParseToggle.checked) return obj;
                 
-                // Deep clone the object to avoid modifying the original
-                const clone = JSON.parse(JSON.stringify(obj));
-                
-                // Recursively traverse the object and try to parse JSON strings
-                function traverse(obj) {
-                    if (!obj || typeof obj !== 'object') return;
+                try {
+                    // Deep clone the object to avoid modifying the original
+                    const clone = JSON.parse(JSON.stringify(obj));
                     
-                    Object.keys(obj).forEach(key => {
-                        // If it's a string, try to parse it as JSON
-                        if (typeof obj[key] === 'string') {
-                            let value = obj[key].trim();
-                            
-                            // Check for various JSON string patterns
-                            // First try: content wrapped in ```json{...}``` or ```{...}```
-                            let match = value.match(/```(?:json)?(.*?)```/s);
-                            if (match) {
-                                value = match[1].trim();
-                            }
-                            
-                            // Now try to parse it if it looks like JSON (starts and ends with {} or [])
-                            if ((value.startsWith('{') && value.endsWith('}')) || 
-                                (value.startsWith('[') && value.endsWith(']'))) {
+                    // Recursively traverse the object and try to parse JSON strings
+                    function traverse(obj) {
+                        if (!obj || typeof obj !== 'object') return;
+                        
+                        Object.keys(obj).forEach(key => {
+                            // If it's a string, try to parse it as JSON
+                            if (typeof obj[key] === 'string') {
+                                let value = obj[key].trim();
+                                
                                 try {
-                                    obj[key] = JSON.parse(value);
+                                    // Check for various JSON string patterns
+                                    // First try: content wrapped in ```json{...}``` or ```{...}```
+                                    let match = value.match(/```(?:json)?(.*?)```/s);
+                                    if (match) {
+                                        value = match[1].trim();
+                                    }
+                                    
+                                    // Now try to parse it if it looks like JSON (starts and ends with {} or [])
+                                    if ((value.startsWith('{') && value.endsWith('}')) || 
+                                        (value.startsWith('[') && value.endsWith(']'))) {
+                                        const parsed = JSON.parse(value);
+                                        obj[key] = parsed;
+                                    }
                                 } catch (e) {
                                     // If parsing fails, keep the original string
                                 }
+                            } else if (obj[key] && typeof obj[key] === 'object') {
+                                // Recursively traverse nested objects and arrays
+                                traverse(obj[key]);
                             }
-                        } else if (obj[key] && typeof obj[key] === 'object') {
-                            // Recursively traverse nested objects and arrays
-                            traverse(obj[key]);
+                        });
+                    }
+                    
+                    traverse(clone);
+                    return clone;
+                } catch (error) {
+                    console.error(`Error in parseJsonStrings: ${error.message}`);
+                    return obj; // Return original if parsing fails
+                }
+            }
+            
+            // Sort JSON objects based on selected key
+            function sortJsonObjects() {
+                try {
+                    const selectedKey = sortKeySelect.value;
+                    
+                    if (!selectedKey) {
+                        // No sorting, restore original order
+                        jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
+                        return;
+                    }
+                    
+                    // Split the key path for nested properties
+                    const keyPath = selectedKey.split('.');
+                    const sortAsNumber = numericSortToggle && numericSortToggle.checked;
+                    
+                    jsonObjects.sort((a, b) => {
+                        try {
+                            // Navigate to the nested property
+                            let valueA = a;
+                            let valueB = b;
+                            
+                            for (const key of keyPath) {
+                                valueA = valueA && typeof valueA === 'object' ? valueA[key] : undefined;
+                                valueB = valueB && typeof valueB === 'object' ? valueB[key] : undefined;
+                            }
+                            
+                            // Handle undefined values
+                            if (valueA === undefined && valueB === undefined) return 0;
+                            if (valueA === undefined) return sortDirection === 'asc' ? 1 : -1;
+                            if (valueB === undefined) return sortDirection === 'asc' ? -1 : 1;
+                            
+                            // Apply numeric conversion if requested
+                            if (sortAsNumber) {
+                                // Try to convert to numbers for comparison
+                                const numA = typeof valueA === 'string' ? parseFloat(valueA) : valueA;
+                                const numB = typeof valueB === 'string' ? parseFloat(valueB) : valueB;
+                                
+                                // Check if both are valid numbers after conversion
+                                if (!isNaN(numA) && !isNaN(numB)) {
+                                    return sortDirection === 'asc' ? numA - numB : numB - numA;
+                                }
+                                // Fall through to string comparison if conversion failed
+                            }
+                            
+                            // Compare based on types
+                            if (typeof valueA === 'string' && typeof valueB === 'string') {
+                                return sortDirection === 'asc' 
+                                    ? valueA.localeCompare(valueB) 
+                                    : valueB.localeCompare(valueA);
+                            } else {
+                                // For numbers, booleans, etc.
+                                return sortDirection === 'asc' 
+                                    ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0)
+                                    : (valueA > valueB ? -1 : valueA < valueB ? 1 : 0);
+                            }
+                        } catch (error) {
+                            console.error(`Error comparing objects: ${error.message}`);
+                            return 0; // Leave order unchanged on error
                         }
                     });
+                } catch (error) {
+                    showError(`Sorting error: ${error.message}`);
+                    // Restore original data on error
+                    jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
                 }
-                
-                traverse(clone);
-                return clone;
             }
             
             // Update the view with current JSON object
             function updateView() {
-                // Get the raw object first
-                const rawJsonObject = rawJsonObjects[currentIndex];
-                
-                // Apply JSON string parsing if enabled
-                const processedJsonObject = parseJsonStrings(rawJsonObject);
-                
-                // Update display
-                jsonContent.textContent = JSON.stringify(processedJsonObject, null, 2);
-                hljs.highlightElement(jsonContent);
-                viewerCounter.textContent = `Object ${currentIndex + 1} of ${jsonObjects.length}`;
+                try {
+                    if (!jsonObjects.length || currentIndex < 0 || currentIndex >= jsonObjects.length) {
+                        jsonContent.textContent = "No valid JSON object to display.";
+                        return;
+                    }
+                    
+                    // Get the object for the current index
+                    const rawJsonObject = jsonObjects[currentIndex];
+                    
+                    // Apply JSON string parsing if enabled
+                    const processedJsonObject = parseJsonStrings(rawJsonObject);
+                    
+                    // Update display
+                    jsonContent.textContent = JSON.stringify(processedJsonObject, null, 2);
+                    
+                    try {
+                        hljs.highlightElement(jsonContent);
+                    } catch (highlightError) {
+                        console.error(`Syntax highlighting error: ${highlightError.message}`);
+                    }
+                    
+                    viewerCounter.textContent = `Object ${currentIndex + 1} of ${jsonObjects.length}`;
+                } catch (error) {
+                    showError(`Error displaying JSON: ${error.message}`);
+                }
             }
             
             // Update navigation buttons enabled/disabled states
             function updateNavButtons() {
-                firstBtn.disabled = currentIndex === 0;
-                prevBtn.disabled = currentIndex === 0;
-                nextBtn.disabled = currentIndex === jsonObjects.length - 1;
-                lastBtn.disabled = currentIndex === jsonObjects.length - 1;
+                try {
+                    if (firstBtn) firstBtn.disabled = currentIndex === 0;
+                    if (prevBtn) prevBtn.disabled = currentIndex === 0;
+                    if (nextBtn) nextBtn.disabled = currentIndex >= jsonObjects.length - 1;
+                    if (lastBtn) lastBtn.disabled = currentIndex >= jsonObjects.length - 1;
+                    
+                    // Update fullscreen navigation buttons too
+                    if (fsFirstBtn) fsFirstBtn.disabled = currentIndex === 0;
+                    if (fsPrevBtn) fsPrevBtn.disabled = currentIndex === 0;
+                    if (fsNextBtn) fsNextBtn.disabled = currentIndex >= jsonObjects.length - 1;
+                    if (fsLastBtn) fsLastBtn.disabled = currentIndex >= jsonObjects.length - 1;
+                    
+                    // Update fullscreen counter
+                    if (fsCounter) {
+                        fsCounter.textContent = `${currentIndex + 1} of ${jsonObjects.length}`;
+                    }
+                } catch (error) {
+                    console.error(`Button update error: ${error.message}`);
+                }
             }
         });
     </script>
