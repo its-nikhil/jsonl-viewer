@@ -1,1197 +1,2948 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JSONL Viewer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs2015.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/vs2015.min.css"
+    />
     <style>
-        :root {
-            --primary-color: #4a6fa5;
-            --primary-hover: #3a5a8c;
-            --bg-color: #f5f7fa;
-            --card-bg: #ffffff;
-            --text-color: #333;
-            --border-color: #ddd;
-            --toggle-bg: #e0e0e0;
-            --toggle-bg-active: #4a6fa5;
-        }
+      :root {
+        --primary-color: #4a6fa5;
+        --primary-hover: #3a5a8c;
+        --bg-color: #f5f7fa;
+        --card-bg: #ffffff;
+        --text-color: #333;
+        --border-color: #ddd;
+        --toggle-bg: #e0e0e0;
+        --toggle-bg-active: #4a6fa5;
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+      }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
 
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-            color: var(--primary-color);
-        }
+      h1 {
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        color: var(--primary-color);
+      }
 
-        p {
-            margin-bottom: 15px;
-        }
+      p {
+        margin-bottom: 15px;
+      }
 
-        .upload-container {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        
-        #drop-area {
-            outline: 2px dashed #ccc;
-            outline-offset: -10px;
-            position: relative;
-        }
-        
-        #drop-area.highlight {
-            outline-color: var(--primary-color);
-            background-color: rgba(74, 111, 165, 0.05);
-        }
-        
-        .drop-instruction {
-            margin-top: 15px;
-            color: #777;
-            font-size: 1rem;
-        }
-        
-        .privacy-notice {
-            margin-top: 20px;
-            color: #555;
-            font-size: 0.9rem;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .privacy-icon {
-            font-size: 1.2rem;
-            color: var(--primary-color);
-        }
+      .upload-container {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        border: 1px solid var(--border-color);
+        text-align: center;
+        transition: all 0.3s ease;
+      }
 
-        .file-input-wrapper {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 15px;
-        }
+      #drop-area {
+        outline: 2px dashed #ccc;
+        outline-offset: -10px;
+        position: relative;
+      }
 
-        .file-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
-        }
+      #drop-area.highlight {
+        outline-color: var(--primary-color);
+        background-color: rgba(74, 111, 165, 0.05);
+      }
 
-        .file-input-btn {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border: none;
-            font-size: 1rem;
-        }
+      .drop-instruction {
+        margin-top: 15px;
+        color: #777;
+        font-size: 1rem;
+      }
 
-        .file-input-btn:hover {
-            background-color: var(--primary-hover);
-        }
+      .privacy-notice {
+        margin-top: 20px;
+        color: #555;
+        font-size: 0.9rem;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-        .file-name {
-            margin-top: 10px;
-            color: #777;
-            font-size: 0.9rem;
-        }
+      .privacy-icon {
+        font-size: 1.2rem;
+        color: var(--primary-color);
+      }
 
-        .viewer-container {
-            display: none;
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border-color);
-        }
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 15px;
+      }
 
+      .file-input {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+
+      .file-input-btn {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border: none;
+        font-size: 1rem;
+      }
+
+      .file-input-btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .file-name {
+        margin-top: 10px;
+        color: #777;
+        font-size: 0.9rem;
+      }
+
+      .viewer-container {
+        display: none;
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+      }
+
+      .viewer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+      }
+
+      .viewer-title {
+        font-size: 1.4rem;
+        color: var(--primary-color);
+      }
+
+      .viewer-header-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .viewer-counter {
+        font-size: 1rem;
+        color: #777;
+        background-color: #f0f0f0;
+        padding: 5px 10px;
+        border-radius: 4px;
+      }
+
+      .open-csv-modal-btn {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .open-csv-modal-btn:hover {
+        background-color: #218838;
+      }
+
+      .code-container {
+        background-color: #1e1e1e;
+        border-radius: 6px;
+        overflow: auto;
+        margin-bottom: 20px;
+        max-height: 500px;
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .fullscreen-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(74, 111, 165, 0.7);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 100;
+        font-size: 1.2rem;
+        transition: background-color 0.2s;
+      }
+
+      .fullscreen-btn:hover {
+        background-color: rgba(74, 111, 165, 1);
+      }
+
+      .fullscreen-mode {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: none;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        border-radius: 0;
+        margin: 0;
+        padding: 10px;
+      }
+
+      .fullscreen-mode .fullscreen-btn {
+        top: 15px;
+        right: 15px;
+      }
+
+      .fullscreen-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 999;
+        padding: 20px;
+      }
+
+      .fs-navigation {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        background-color: rgba(74, 111, 165, 0.9);
+        padding: 10px 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .fs-navigation.active {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      pre {
+        padding: 15px;
+        margin: 0;
+      }
+
+      .pre-wrap {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .options-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+      }
+
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--toggle-bg);
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+
+      .toggle-slider:before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .toggle-slider {
+        background-color: var(--toggle-bg-active);
+      }
+
+      input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+      }
+
+      .toggle-label {
+        font-size: 0.9rem;
+        user-select: none;
+      }
+
+      .sort-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sort-key-select {
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        background-color: white;
+        font-size: 0.9rem;
+        min-width: 180px;
+      }
+
+      .sort-direction-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+      }
+
+      .sort-direction-btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .sort-direction-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .nav-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .nav-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 20px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .nav-btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .nav-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .instructions {
+        background-color: rgba(245, 247, 250, 0.8);
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      .shortcut {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: monospace;
+      }
+
+      .error-message {
+        color: #e74c3c;
+        background-color: #fde2e2;
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      /* CSV Export Modal Styles */
+      .csv-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .csv-modal-overlay.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .csv-export-container {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 20px;
+        padding-bottom: 80px; /* Space for fixed footer */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--border-color);
+        width: 100%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .csv-export-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+      }
+
+      .csv-export-title {
+        font-size: 1.4rem;
+        color: var(--primary-color);
+      }
+
+      .csv-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .csv-modal-close:hover {
+        background-color: #f0f0f0;
+        color: #333;
+      }
+
+      .csv-export-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .csv-export-btn {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.9rem;
+        display: flex;
+        gap: 5px;
+        flex: 1;
+        justify-content: center;
+      }
+
+      .csv-export-btn:hover {
+        background-color: #218838;
+      }
+
+      .csv-export-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .select-all-btn,
+      .select-none-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.8rem;
+      }
+
+      .select-all-btn:hover,
+      .select-none-btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .keys-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 15px;
+        background-color: #fafafa;
+      }
+
+      .key-checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+      }
+
+      .key-checkbox-container:hover {
+        background-color: #e9ecef;
+      }
+
+      .key-checkbox {
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .key-label {
+        cursor: pointer;
+        font-size: 0.9rem;
+        word-break: break-all;
+        flex: 1;
+      }
+
+      .array-mode-select {
+        padding: 3px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        font-size: 0.8rem;
+        background-color: white;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .export-status {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 4px;
+        display: none;
+      }
+
+      .export-status.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .export-status.warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+
+      .export-status.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f1b0b7;
+      }
+
+      .csv-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+      }
+
+      .csv-info-panel {
+        background-color: #e7f3ff;
+        border: 1px solid #b8daff;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-bottom: 15px;
+        font-size: 0.85rem;
+        color: #004085;
+      }
+
+      .csv-info-panel h4 {
+        margin: 0 0 4px 0;
+        color: var(--primary-color);
+        font-size: 0.9rem;
+      }
+
+      .csv-info-panel p {
+        margin: 0 0 3px 0;
+        line-height: 1.3;
+      }
+
+      .csv-info-panel .highlight {
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .custom-paths-section {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+      }
+
+      .custom-paths-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .custom-paths-title {
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .custom-path-input-container {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .custom-path-input {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-family: monospace;
+      }
+
+      .add-custom-path-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+
+      .add-custom-path-btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .custom-paths-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .custom-path-tag {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-family: monospace;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .remove-custom-path {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .remove-custom-path:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .array-depth-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .array-depth-input {
+        width: 60px;
+        padding: 4px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .keys-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .keys-section-title {
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .selection-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .csv-export-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--card-bg);
+        padding: 15px 20px;
+        text-align: center;
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        display: flex;
+      }
+
+      .search-filter-container {
+        margin-bottom: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .search-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        background-color: white;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.1);
+      }
+
+      .search-clear-btn {
+        background-color: #e0e0e0;
+        color: #666;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+      }
+
+      .search-clear-btn:hover {
+        background-color: #d0d0d0;
+        color: #333;
+      }
+
+      .filter-info {
+        font-size: 0.85rem;
+        color: #666;
+        margin-left: 10px;
+      }
+
+      .no-results {
+        grid-column: 1/-1;
+        text-align: center;
+        color: #777;
+        padding: 20px;
+        font-style: italic;
+      }
+
+      .delimiter-input-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .delimiter-input {
+        width: 80px;
+        padding: 4px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-family: monospace;
+      }
+
+      mark {
+        background-color: #ffeb3b;
+        color: inherit;
+        padding: 0 2px;
+        border-radius: 2px;
+      }
+
+      @media (max-width: 768px) {
         .viewer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
         }
 
-        .viewer-title {
-            font-size: 1.4rem;
-            color: var(--primary-color);
+        .csv-export-header {
+          padding-right: 40px; /* Less space needed on mobile */
         }
 
-        .viewer-counter {
-            font-size: 1rem;
-            color: #777;
-            background-color: #f0f0f0;
-            padding: 5px 10px;
-            border-radius: 4px;
-        }
-
-        .code-container {
-            background-color: #1e1e1e;
-            border-radius: 6px;
-            overflow: auto;
-            margin-bottom: 20px;
-            max-height: 500px;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .fullscreen-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(74, 111, 165, 0.7);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 100;
-            font-size: 1.2rem;
-            transition: background-color 0.2s;
-        }
-
-        .fullscreen-btn:hover {
-            background-color: rgba(74, 111, 165, 1);
-        }
-
-        .fullscreen-mode {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            max-height: none;
-            width: 100%;
-            height: 100%;
-            z-index: 1000;
-            border-radius: 0;
-            margin: 0;
-            padding: 10px;
-        }
-
-        .fullscreen-mode .fullscreen-btn {
-            top: 15px;
-            right: 15px;
-        }
-
-        .fullscreen-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 999;
-            padding: 20px;
-        }
-
-        .fs-navigation {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1001;
-            background-color: rgba(74, 111, 165, 0.9);
-            padding: 10px 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .fs-navigation.active {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        pre {
-            padding: 15px;
-            margin: 0;
-        }
-
-        .pre-wrap {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .options-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-        }
-
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--toggle-bg);
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: var(--toggle-bg-active);
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-
-        .toggle-label {
-            font-size: 0.9rem;
-            user-select: none;
-        }
-
-        .sort-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sort-key-select {
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-            background-color: white;
-            font-size: 0.9rem;
-            min-width: 180px;
-        }
-
-        .sort-direction-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.2s;
-        }
-
-        .sort-direction-btn:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .sort-direction-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        .viewer-header-right {
+          width: 100%;
+          justify-content: space-between;
         }
 
         .nav-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
+          flex-wrap: wrap;
         }
 
-        .nav-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 20px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .options-container,
+        .csv-options {
+          flex-direction: column;
+          align-items: flex-start;
         }
 
-        .nav-btn:hover {
-            background-color: var(--primary-hover);
+        .keys-grid {
+          grid-template-columns: 1fr;
         }
 
-        .nav-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        .keys-section-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
         }
 
-        .instructions {
-            background-color: rgba(245, 247, 250, 0.8);
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #666;
+        .selection-controls {
+          align-self: stretch;
+          justify-content: center;
         }
 
-        .shortcut {
-            background-color: #eee;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: monospace;
+        .csv-modal-overlay {
+          padding: 10px;
         }
 
-        .error-message {
-            color: #e74c3c;
-            background-color: #fde2e2;
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-            display: none;
+        .csv-export-container {
+          max-height: 95vh;
+          margin: 0;
+          padding-bottom: 80px; /* Space for fixed footer on mobile too */
         }
 
-        @media (max-width: 768px) {
-            .viewer-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .nav-buttons {
-                flex-wrap: wrap;
-            }
-            
-            .options-container {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        .csv-export-title {
+          font-size: 1.2rem;
         }
+
+        .csv-export-btn {
+          padding: 10px 20px;
+          font-size: 0.9rem;
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>JSONL Viewer</h1>
-        <p>Upload a JSONL file to view and navigate through each JSON object. <br>Your data never leaves your device - all processing happens locally in your browser.</p>
+      <h1>JSONL Viewer</h1>
+      <p>
+        Upload a JSONL file to view and navigate through each JSON object or
+        export to CSV. <br />Your data never leaves your device - all processing
+        happens locally in your browser.
+      </p>
     </header>
 
     <div class="upload-container" id="drop-area">
-        <div class="file-input-wrapper">
-            <button class="file-input-btn">Choose JSONL File</button>
-            <input type="file" class="file-input" id="file-input" accept=".jsonl, .json">
-        </div>
-        <div class="file-name" id="file-name">No file selected</div>
-        <div class="drop-instruction">or drag & drop your file here</div>
-        <div class="privacy-notice">
-            <span class="privacy-icon">🔒</span> Your data stays on your device - nothing is uploaded to any server
-        </div>
+      <div class="file-input-wrapper">
+        <button class="file-input-btn">Choose JSONL File</button>
+        <input
+          type="file"
+          class="file-input"
+          id="file-input"
+          accept=".jsonl, .json"
+        />
+      </div>
+      <div class="file-name" id="file-name">No file selected</div>
+      <div class="drop-instruction">or drag & drop your file here</div>
+      <div class="privacy-notice">
+        <span class="privacy-icon">🔒</span> Your data stays on your device -
+        nothing is uploaded to any server
+      </div>
     </div>
 
     <div class="error-message" id="error-display"></div>
 
+    <!-- CSV Export Modal -->
+    <div class="csv-modal-overlay" id="csv-modal-overlay">
+      <div class="csv-export-container" id="csv-export-container">
+        <button class="csv-modal-close" id="csv-modal-close">×</button>
+        <div class="csv-export-header">
+          <div class="csv-export-title">CSV Export Configuration</div>
+        </div>
+
+        <div class="csv-options">
+          <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" id="flatten-nested-toggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Flatten Nested Objects</span>
+          </div>
+
+          <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" id="include-arrays-toggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Include Array Fields</span>
+          </div>
+
+          <div class="array-depth-container">
+            <span class="toggle-label">Array Depth:</span>
+            <input
+              type="number"
+              id="array-depth-input"
+              class="array-depth-input"
+              min="0"
+              max="5"
+              value="2"
+              title="How many levels deep to explore arrays (0 = arrays as JSON strings)"
+            />
+          </div>
+
+          <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" id="preserve-json-strings-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Preserve JSON Strings</span>
+          </div>
+
+          <div class="delimiter-input-container">
+            <span class="toggle-label">Join Delimiter:</span>
+            <input
+              type="text"
+              id="delimiter-input"
+              class="delimiter-input"
+              value=", "
+              placeholder="Delimiter"
+            />
+          </div>
+        </div>
+
+        <div class="csv-info-panel">
+          <h4>💡 Quick Info</h4>
+          <p>
+            <span class="highlight">Keys:</span> Auto-detected from loaded data.
+            <span class="highlight">Arrays:</span> Use
+            <code>items[0].name</code> notation.
+          </p>
+          <p>
+            <span class="highlight">Wildcard Arrays:</span> Use
+            <code>[*]</code> to handle all array items - choose to keep as
+            array, join values, or explode to columns.
+          </p>
+          <p>
+            <span class="highlight">JSON Strings:</span> Toggle "Preserve" OFF
+            to parse and discover nested fields for selection.
+          </p>
+        </div>
+
+        <div class="custom-paths-section">
+          <div class="custom-paths-header">
+            <div class="custom-paths-title">Custom Field Paths</div>
+          </div>
+          <div class="custom-path-input-container">
+            <input
+              type="text"
+              id="custom-path-input"
+              class="custom-path-input"
+              placeholder="e.g., data.items[0].name, users[*].email, nested.deep.value"
+            />
+            <button id="add-custom-path-btn" class="add-custom-path-btn">
+              Add Path
+            </button>
+          </div>
+          <div class="custom-paths-list" id="custom-paths-list">
+            <!-- Custom paths will appear here -->
+          </div>
+        </div>
+
+        <div class="keys-section-header">
+          <div class="keys-section-title">Select Fields to Export</div>
+          <div class="selection-controls">
+            <button class="select-all-btn" id="select-all-keys">
+              Select All
+            </button>
+            <button class="select-none-btn" id="select-none-keys">
+              Select None
+            </button>
+          </div>
+        </div>
+
+        <div class="search-filter-container">
+          <input
+            type="text"
+            id="search-keys-input"
+            class="search-input"
+            placeholder="Search fields... (e.g., 'language', 'content.parts', '[*]')"
+          />
+          <button class="search-clear-btn" id="search-clear-btn">Clear</button>
+          <span class="filter-info" id="filter-info"></span>
+        </div>
+
+        <div class="keys-grid" id="keys-grid">
+          <!-- Key checkboxes will be populated here -->
+        </div>
+
+        <div class="export-status" id="export-status"></div>
+
+        <div class="csv-export-footer">
+          <button class="csv-export-btn" id="export-csv-btn">
+            📊 Export to CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="viewer-container" id="viewer-container">
-        <div class="viewer-header">
-            <div class="viewer-title" id="viewer-title">JSON Objects</div>
-            <div class="viewer-counter" id="viewer-counter">Object 0 of 0</div>
+      <div class="viewer-header">
+        <div class="viewer-title" id="viewer-title">JSON Objects</div>
+        <div class="viewer-header-right">
+          <div class="viewer-counter" id="viewer-counter">Object 0 of 0</div>
+          <button class="open-csv-modal-btn" id="open-csv-modal-btn">
+            📊 CSV Export
+          </button>
         </div>
-        
-        <div class="options-container">
-            <div class="toggle-container">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="word-wrap-toggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">Enable Word Wrap</span>
-            </div>
-            
-            <div class="toggle-container">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="auto-parse-toggle" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">Auto-Parse JSON Strings</span>
-            </div>
-            
-            <div class="sort-container">
-                <label for="sort-key-select" class="toggle-label">Sort by key:</label>
-                <select id="sort-key-select" class="sort-key-select">
-                    <option value="">None (Original Order)</option>
-                </select>
-                <button id="sort-direction-btn" class="sort-direction-btn" title="Toggle sort direction" disabled>
-                    <span id="sort-direction-icon">↓</span>
-                </button>
-                <div class="toggle-container" style="margin-left: 10px;">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="numeric-sort-toggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span class="toggle-label">Sort as Numbers</span>
-                </div>
-            </div>
+      </div>
+
+      <div class="options-container">
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input type="checkbox" id="word-wrap-toggle" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">Enable Word Wrap</span>
         </div>
-        
-        <div class="code-container" id="code-container">
-            <button id="fullscreen-btn" class="fullscreen-btn" title="Toggle fullscreen">⛶</button>
-            <pre><code id="json-content" class="json">Please upload a JSONL file to view content.</code></pre>
+
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input type="checkbox" id="auto-parse-toggle" checked />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">Auto-Parse JSON Strings</span>
         </div>
-        
-        <div class="fullscreen-overlay" id="fullscreen-overlay">
-            <div class="fs-navigation" id="fs-navigation">
-                <button class="nav-btn" id="fs-first-btn">« First</button>
-                <button class="nav-btn" id="fs-prev-btn">‹ Previous</button>
-                <span id="fs-counter" style="color: white;">0 of 0</span>
-                <button class="nav-btn" id="fs-next-btn">Next ›</button>
-                <button class="nav-btn" id="fs-last-btn">Last »</button>
-            </div>
+
+        <div class="sort-container">
+          <label for="sort-key-select" class="toggle-label">Sort by key:</label>
+          <select id="sort-key-select" class="sort-key-select">
+            <option value="">None (Original Order)</option>
+          </select>
+          <button
+            id="sort-direction-btn"
+            class="sort-direction-btn"
+            title="Toggle sort direction"
+            disabled
+          >
+            <span id="sort-direction-icon">↓</span>
+          </button>
+          <div class="toggle-container" style="margin-left: 10px">
+            <label class="toggle-switch">
+              <input type="checkbox" id="numeric-sort-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Sort as Numbers</span>
+          </div>
         </div>
-        
-        <div class="nav-buttons">
-            <button class="nav-btn" id="first-btn" disabled>« First</button>
-            <button class="nav-btn" id="prev-btn" disabled>‹ Previous</button>
-            <button class="nav-btn" id="next-btn" disabled>Next ›</button>
-            <button class="nav-btn" id="last-btn" disabled>Last »</button>
+      </div>
+
+      <div class="code-container" id="code-container">
+        <button
+          id="fullscreen-btn"
+          class="fullscreen-btn"
+          title="Toggle fullscreen"
+        >
+          ⛶
+        </button>
+        <pre><code id="json-content" class="json">Please upload a JSONL file to view content.</code></pre>
+      </div>
+
+      <div class="fullscreen-overlay" id="fullscreen-overlay">
+        <div class="fs-navigation" id="fs-navigation">
+          <button class="nav-btn" id="fs-first-btn">« First</button>
+          <button class="nav-btn" id="fs-prev-btn">‹ Previous</button>
+          <span id="fs-counter" style="color: white">0 of 0</span>
+          <button class="nav-btn" id="fs-next-btn">Next ›</button>
+          <button class="nav-btn" id="fs-last-btn">Last »</button>
         </div>
-        
-        <div class="instructions">
-            <strong>Keyboard Shortcuts:</strong> Use <span class="shortcut">←</span> for previous, <span class="shortcut">→</span> for next, <span class="shortcut">Home</span> for first, and <span class="shortcut">End</span> for last item.
-        </div>
+      </div>
+
+      <div class="nav-buttons">
+        <button class="nav-btn" id="first-btn" disabled>« First</button>
+        <button class="nav-btn" id="prev-btn" disabled>‹ Previous</button>
+        <button class="nav-btn" id="next-btn" disabled>Next ›</button>
+        <button class="nav-btn" id="last-btn" disabled>Last »</button>
+      </div>
+
+      <div class="instructions">
+        <strong>Keyboard Shortcuts:</strong> Use
+        <span class="shortcut">←</span> for previous,
+        <span class="shortcut">→</span> for next,
+        <span class="shortcut">Home</span> for first, and
+        <span class="shortcut">End</span> for last item.
+      </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM Element References
-            const fileInput = document.getElementById('file-input');
-            const fileName = document.getElementById('file-name');
-            const viewerContainer = document.getElementById('viewer-container');
-            const viewerTitle = document.getElementById('viewer-title');
-            const viewerCounter = document.getElementById('viewer-counter');
-            const jsonContent = document.getElementById('json-content');
-            const firstBtn = document.getElementById('first-btn');
-            const prevBtn = document.getElementById('prev-btn');
-            const nextBtn = document.getElementById('next-btn');
-            const lastBtn = document.getElementById('last-btn');
-            const dropArea = document.getElementById('drop-area');
-            const wordWrapToggle = document.getElementById('word-wrap-toggle');
-            const autoParseToggle = document.getElementById('auto-parse-toggle');
-            const sortKeySelect = document.getElementById('sort-key-select');
-            const sortDirectionBtn = document.getElementById('sort-direction-btn');
-            const sortDirectionIcon = document.getElementById('sort-direction-icon');
-            const numericSortToggle = document.getElementById('numeric-sort-toggle');
-            const errorDisplay = document.getElementById('error-display');
-            const codeContainer = document.getElementById('code-container');
-            const fullscreenBtn = document.getElementById('fullscreen-btn');
-            const fullscreenOverlay = document.getElementById('fullscreen-overlay');
-            const fsNavigation = document.getElementById('fs-navigation');
-            const fsFirstBtn = document.getElementById('fs-first-btn');
-            const fsPrevBtn = document.getElementById('fs-prev-btn');
-            const fsNextBtn = document.getElementById('fs-next-btn');
-            const fsLastBtn = document.getElementById('fs-last-btn');
-            const fsCounter = document.getElementById('fs-counter');
-            
-            // State Variables
-            let jsonObjects = [];
-            let rawJsonObjects = []; // Store original unparsed objects
-            let currentIndex = 0;
-            let sortDirection = 'asc'; // Default sort direction
-            let availableKeys = new Set();
-            let isFullscreen = false;
-            
-            // Fullscreen toggle
-            if (fullscreenBtn) {
-                fullscreenBtn.addEventListener('click', function() {
-                    try {
-                        toggleFullscreen();
-                    } catch (error) {
-                        showError(`Fullscreen toggle error: ${error.message}`);
+      document.addEventListener('DOMContentLoaded', function () {
+        // DOM Element References
+        const fileInput = document.getElementById('file-input')
+        const fileName = document.getElementById('file-name')
+        const viewerContainer = document.getElementById('viewer-container')
+        const viewerTitle = document.getElementById('viewer-title')
+        const viewerCounter = document.getElementById('viewer-counter')
+        const jsonContent = document.getElementById('json-content')
+        const firstBtn = document.getElementById('first-btn')
+        const prevBtn = document.getElementById('prev-btn')
+        const nextBtn = document.getElementById('next-btn')
+        const lastBtn = document.getElementById('last-btn')
+        const dropArea = document.getElementById('drop-area')
+        const wordWrapToggle = document.getElementById('word-wrap-toggle')
+        const autoParseToggle = document.getElementById('auto-parse-toggle')
+        const sortKeySelect = document.getElementById('sort-key-select')
+        const sortDirectionBtn = document.getElementById('sort-direction-btn')
+        const sortDirectionIcon = document.getElementById('sort-direction-icon')
+        const numericSortToggle = document.getElementById('numeric-sort-toggle')
+        const errorDisplay = document.getElementById('error-display')
+        const codeContainer = document.getElementById('code-container')
+        const fullscreenBtn = document.getElementById('fullscreen-btn')
+        const fullscreenOverlay = document.getElementById('fullscreen-overlay')
+        const fsNavigation = document.getElementById('fs-navigation')
+        const fsFirstBtn = document.getElementById('fs-first-btn')
+        const fsPrevBtn = document.getElementById('fs-prev-btn')
+        const fsNextBtn = document.getElementById('fs-next-btn')
+        const fsLastBtn = document.getElementById('fs-last-btn')
+        const fsCounter = document.getElementById('fs-counter')
+
+        // CSV Export Elements
+        const csvModalOverlay = document.getElementById('csv-modal-overlay')
+        const csvExportContainer = document.getElementById(
+          'csv-export-container'
+        )
+        const csvModalClose = document.getElementById('csv-modal-close')
+        const openCsvModalBtn = document.getElementById('open-csv-modal-btn')
+        const keysGrid = document.getElementById('keys-grid')
+        const selectAllKeysBtn = document.getElementById('select-all-keys')
+        const selectNoneKeysBtn = document.getElementById('select-none-keys')
+        const exportCsvBtn = document.getElementById('export-csv-btn')
+        const exportStatus = document.getElementById('export-status')
+        const flattenNestedToggle = document.getElementById(
+          'flatten-nested-toggle'
+        )
+        const includeArraysToggle = document.getElementById(
+          'include-arrays-toggle'
+        )
+        const arrayDepthInput = document.getElementById('array-depth-input')
+        const preserveJsonStringsToggle = document.getElementById(
+          'preserve-json-strings-toggle'
+        )
+        const customPathInput = document.getElementById('custom-path-input')
+        const addCustomPathBtn = document.getElementById('add-custom-path-btn')
+        const customPathsList = document.getElementById('custom-paths-list')
+        const delimiterInput = document.getElementById('delimiter-input')
+        const searchKeysInput = document.getElementById('search-keys-input')
+        const searchClearBtn = document.getElementById('search-clear-btn')
+        const filterInfo = document.getElementById('filter-info')
+
+        // State Variables
+        let jsonObjects = []
+        let rawJsonObjects = [] // Store original unparsed objects
+        let currentIndex = 0
+        let sortDirection = 'asc' // Default sort direction
+        let availableKeys = new Set()
+        let exportableKeys = new Set() // Keys available for CSV export
+        let customPaths = new Set() // User-defined custom paths
+        let isFullscreen = false
+        let arrayKeyModes = {} // Store individual array key handling preferences
+        let wildcardArrayKeys = new Set() // Track keys that contain [*]
+        let keySelectionState = {} // Store checkbox selection state
+
+        // CSV Export functionality
+        function collectExportKeys() {
+          exportableKeys.clear()
+          wildcardArrayKeys.clear()
+
+          if (jsonObjects.length === 0) return
+
+          const flattenNested = flattenNestedToggle
+            ? flattenNestedToggle.checked
+            : true
+          const includeArrays = includeArraysToggle
+            ? includeArraysToggle.checked
+            : true
+          const arrayDepth = arrayDepthInput
+            ? parseInt(arrayDepthInput.value) || 2
+            : 2
+          const parseJsonStrings = preserveJsonStringsToggle
+            ? !preserveJsonStringsToggle.checked
+            : true // Inverted logic - when preserve is OFF, we parse
+
+          // Analyze all objects to find all possible keys
+          jsonObjects.forEach((obj) => {
+            const processedObj = parseJsonStrings
+              ? parseJsonStringsForExport(obj)
+              : obj
+            findExportKeys(
+              processedObj,
+              '',
+              flattenNested,
+              includeArrays,
+              arrayDepth,
+              0
+            )
+          })
+        }
+
+        // Parse JSON strings specifically for export key discovery
+        function parseJsonStringsForExport(obj) {
+          try {
+            // Deep clone the object to avoid modifying the original
+            const clone = JSON.parse(JSON.stringify(obj))
+
+            // Recursively traverse the object and try to parse JSON strings
+            function traverse(obj) {
+              if (!obj || typeof obj !== 'object') return
+
+              Object.keys(obj).forEach((key) => {
+                // If it's a string, try to parse it as JSON
+                if (typeof obj[key] === 'string') {
+                  let value = obj[key].trim()
+
+                  try {
+                    // Check for various JSON string patterns
+                    // First try: content wrapped in ```json{...}``` or ```{...}```
+                    let match = value.match(/```(?:json)?(.*?)```/s)
+                    if (match) {
+                      value = match[1].trim()
                     }
-                });
-                
-                // Hide fullscreen button initially if no content
-                fullscreenBtn.style.display = 'none';
-            }
-            
-            // Fullscreen navigation buttons
-            if (fsFirstBtn) {
-                fsFirstBtn.addEventListener('click', function() {
-                    try {
-                        currentIndex = 0;
-                        updateView();
-                        updateNavButtons();
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
+
+                    // Now try to parse it if it looks like JSON (starts and ends with {} or [])
+                    if (
+                      (value.startsWith('{') && value.endsWith('}')) ||
+                      (value.startsWith('[') && value.endsWith(']'))
+                    ) {
+                      const parsed = JSON.parse(value)
+                      obj[key] = parsed
                     }
-                });
+                  } catch (e) {
+                    // If parsing fails, keep the original string
+                  }
+                } else if (obj[key] && typeof obj[key] === 'object') {
+                  // Recursively traverse nested objects and arrays
+                  traverse(obj[key])
+                }
+              })
             }
-            
-            if (fsPrevBtn) {
-                fsPrevBtn.addEventListener('click', function() {
-                    try {
-                        if (currentIndex > 0) {
-                            currentIndex--;
-                            updateView();
-                            updateNavButtons();
-                        }
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
+
+            traverse(clone)
+            return clone
+          } catch (error) {
+            console.error(
+              `Error in parseJsonStringsForExport: ${error.message}`
+            )
+            return obj // Return original if parsing fails
+          }
+        }
+
+        function findExportKeys(
+          obj,
+          prefix = '',
+          flattenNested = true,
+          includeArrays = true,
+          maxArrayDepth = 2,
+          currentDepth = 0
+        ) {
+          if (
+            !obj ||
+            typeof obj !== 'object' ||
+            currentDepth > maxArrayDepth + 3
+          )
+            return
+
+          Object.keys(obj).forEach((key) => {
+            const fullKey = prefix ? `${prefix}.${key}` : key
+            const value = obj[key]
+
+            if (Array.isArray(value)) {
+              if (includeArrays) {
+                // Add the array itself as a field (will be JSON stringified)
+                exportableKeys.add(fullKey)
+
+                // If array has items and we haven't exceeded depth, explore first few items
+                if (value.length > 0 && currentDepth < maxArrayDepth) {
+                  // Sample first 3 items to find patterns
+                  const sampleSize = Math.min(3, value.length)
+                  for (let i = 0; i < sampleSize; i++) {
+                    if (value[i] && typeof value[i] === 'object') {
+                      findExportKeys(
+                        value[i],
+                        `${fullKey}[${i}]`,
+                        flattenNested,
+                        includeArrays,
+                        maxArrayDepth,
+                        currentDepth + 1
+                      )
+
+                      // Also add wildcard notation for user reference
+                      if (i === 0) {
+                        findExportKeys(
+                          value[i],
+                          `${fullKey}[*]`,
+                          flattenNested,
+                          includeArrays,
+                          maxArrayDepth,
+                          currentDepth + 1
+                        )
+                      }
+                    } else {
+                      // Primitive values in array
+                      exportableKeys.add(`${fullKey}[${i}]`)
+                      if (i === 0) {
+                        exportableKeys.add(`${fullKey}[*]`)
+                      }
                     }
-                });
+                  }
+                }
+              }
+            } else if (value && typeof value === 'object') {
+              if (flattenNested) {
+                // Add nested keys
+                findExportKeys(
+                  value,
+                  fullKey,
+                  flattenNested,
+                  includeArrays,
+                  maxArrayDepth,
+                  currentDepth
+                )
+              } else {
+                // Add the object key itself (will be JSON stringified)
+                exportableKeys.add(fullKey)
+              }
+            } else {
+              // Primitive value
+              exportableKeys.add(fullKey)
             }
-            
-            if (fsNextBtn) {
-                fsNextBtn.addEventListener('click', function() {
-                    try {
-                        if (currentIndex < jsonObjects.length - 1) {
-                            currentIndex++;
-                            updateView();
-                            updateNavButtons();
-                        }
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
+          })
+        }
+
+        function saveKeySelectionState() {
+          // Save current checkbox states from visible checkboxes only
+          const checkboxes = keysGrid.querySelectorAll('.key-checkbox')
+          checkboxes.forEach((cb) => {
+            keySelectionState[cb.value] = cb.checked
+          })
+        }
+
+        function updateExportKeysUI(searchTerm = '') {
+          // Save current selection state before clearing
+          saveKeySelectionState()
+
+          keysGrid.innerHTML = ''
+          wildcardArrayKeys.clear()
+
+          // Combine auto-detected keys with custom paths
+          const allKeys = new Set([...exportableKeys, ...customPaths])
+
+          if (allKeys.size === 0) {
+            keysGrid.innerHTML =
+              '<div class="no-results">No exportable keys found</div>'
+            updateFilterInfo(0, 0)
+            return
+          }
+
+          // Sort keys: auto-detected first, then custom paths
+          const autoKeys = Array.from(exportableKeys).sort()
+          const customKeys = Array.from(customPaths).sort()
+          const sortedKeys = [...autoKeys, ...customKeys]
+
+          // Filter keys based on search term
+          const filteredKeys = searchTerm
+            ? sortedKeys.filter((key) =>
+                key.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+            : sortedKeys
+
+          updateFilterInfo(filteredKeys.length, sortedKeys.length)
+
+          if (filteredKeys.length === 0) {
+            keysGrid.innerHTML =
+              '<div class="no-results">No fields match your search</div>'
+            return
+          }
+
+          filteredKeys.forEach((key) => {
+            const isWildcardKey = key.includes('[*]')
+            if (isWildcardKey) {
+              wildcardArrayKeys.add(key)
+              // Initialize default mode if not set
+              if (!arrayKeyModes[key]) {
+                arrayKeyModes[key] = 'array' // Default to array mode (original behavior)
+              }
+            }
+
+            const container = document.createElement('div')
+            container.className = 'key-checkbox-container'
+
+            const checkbox = document.createElement('input')
+            checkbox.type = 'checkbox'
+            checkbox.className = 'key-checkbox'
+            checkbox.id = `key-${key.replace(/[^a-zA-Z0-9]/g, '_')}`
+            checkbox.value = key
+
+            // Restore previous selection state or default to true for new keys
+            checkbox.checked =
+              keySelectionState[key] !== undefined
+                ? keySelectionState[key]
+                : true
+
+            // Update state when checkbox changes
+            checkbox.addEventListener('change', function () {
+              keySelectionState[key] = this.checked
+            })
+
+            const label = document.createElement('label')
+            label.className = 'key-label'
+            label.htmlFor = checkbox.id
+
+            // Highlight search term in label if present
+            if (searchTerm) {
+              const regex = new RegExp(`(${searchTerm})`, 'gi')
+              const highlightedKey = key.replace(regex, '<mark>$1</mark>')
+              if (customPaths.has(key)) {
+                label.innerHTML = `${highlightedKey} <span style="color: #666; font-size: 0.8em;">(custom)</span>`
+              } else {
+                label.innerHTML = highlightedKey
+              }
+            } else {
+              // Mark custom paths differently
+              if (customPaths.has(key)) {
+                label.innerHTML = `${key} <span style="color: #666; font-size: 0.8em;">(custom)</span>`
+              } else {
+                label.textContent = key
+              }
+            }
+
+            container.appendChild(checkbox)
+            container.appendChild(label)
+
+            // Add array mode selector for wildcard keys
+            if (isWildcardKey) {
+              const modeSelect = document.createElement('select')
+              modeSelect.className = 'array-mode-select'
+              modeSelect.innerHTML = `
+                            <option value="array" ${arrayKeyModes[key] === 'array' ? 'selected' : ''}>As Array</option>
+                            <option value="join" ${arrayKeyModes[key] === 'join' ? 'selected' : ''}>Join</option>
+                            <option value="explode" ${arrayKeyModes[key] === 'explode' ? 'selected' : ''}>Explode</option>
+                        `
+              modeSelect.addEventListener('change', function () {
+                arrayKeyModes[key] = this.value
+              })
+              container.appendChild(modeSelect)
+            }
+
+            keysGrid.appendChild(container)
+          })
+        }
+
+        function updateFilterInfo(shown, total) {
+          if (filterInfo) {
+            if (shown === total) {
+              filterInfo.textContent = `Showing all ${total} fields`
+            } else {
+              filterInfo.textContent = `Showing ${shown} of ${total} fields`
+            }
+          }
+        }
+
+        // Custom path management
+        function addCustomPath() {
+          const path = customPathInput.value.trim()
+          if (!path) return
+
+          // Validate path format (basic validation)
+          if (
+            path.includes('..') ||
+            path.startsWith('.') ||
+            path.endsWith('.')
+          ) {
+            showExportStatus(
+              'Invalid path format. Paths should not start/end with dots or contain consecutive dots.',
+              'warning'
+            )
+            return
+          }
+
+          customPaths.add(path)
+          // Initialize new custom path as selected
+          keySelectionState[path] = true
+          customPathInput.value = ''
+          const searchTerm = searchKeysInput ? searchKeysInput.value.trim() : ''
+          updateExportKeysUI(searchTerm)
+          updateCustomPathsDisplay()
+        }
+
+        function removeCustomPath(path) {
+          customPaths.delete(path)
+          delete keySelectionState[path]
+          const searchTerm = searchKeysInput ? searchKeysInput.value.trim() : ''
+          updateExportKeysUI(searchTerm)
+          updateCustomPathsDisplay()
+        }
+
+        function updateCustomPathsDisplay() {
+          customPathsList.innerHTML = ''
+
+          Array.from(customPaths)
+            .sort()
+            .forEach((path) => {
+              const tag = document.createElement('div')
+              tag.className = 'custom-path-tag'
+
+              const pathText = document.createElement('span')
+              pathText.textContent = path
+
+              const removeBtn = document.createElement('button')
+              removeBtn.className = 'remove-custom-path'
+              removeBtn.textContent = '×'
+              removeBtn.title = 'Remove custom path'
+              removeBtn.addEventListener('click', () => removeCustomPath(path))
+
+              tag.appendChild(pathText)
+              tag.appendChild(removeBtn)
+              customPathsList.appendChild(tag)
+            })
+        }
+
+        function getSelectedKeys() {
+          const checkboxes = keysGrid.querySelectorAll('.key-checkbox:checked')
+          return Array.from(checkboxes).map((cb) => cb.value)
+        }
+
+        function extractValueByPath(obj, path, shouldParseJsonStrings = false) {
+          try {
+            // If we should parse JSON strings, do it first
+            const sourceObj = shouldParseJsonStrings
+              ? parseJsonStringsForExport(obj)
+              : obj
+
+            // Handle array notation like items[0].name or items[*].name
+            if (path.includes('[')) {
+              return extractArrayPath(sourceObj, path)
+            }
+
+            // Standard dot notation
+            const keys = path.split('.')
+            let current = sourceObj
+
+            for (const key of keys) {
+              if (current && typeof current === 'object' && key in current) {
+                current = current[key]
+              } else {
+                return undefined
+              }
+            }
+
+            return current
+          } catch (error) {
+            return undefined
+          }
+        }
+
+        function extractArrayPath(obj, path) {
+          try {
+            // Parse path with array notation: items[0].name or data.users[*].email
+            let current = obj
+            const parts = []
+
+            // Split by dots but keep array notation together
+            let currentPart = ''
+            let inBrackets = false
+
+            for (let i = 0; i < path.length; i++) {
+              const char = path[i]
+              if (char === '[') {
+                inBrackets = true
+                currentPart += char
+              } else if (char === ']') {
+                inBrackets = false
+                currentPart += char
+              } else if (char === '.' && !inBrackets) {
+                if (currentPart) {
+                  parts.push(currentPart)
+                  currentPart = ''
+                }
+              } else {
+                currentPart += char
+              }
+            }
+            if (currentPart) {
+              parts.push(currentPart)
+            }
+
+            // Process each part
+            for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+              const part = parts[partIndex]
+
+              if (part.includes('[')) {
+                // Handle array access: items[0] or items[*]
+                const [arrayName, indexPart] = part.split('[')
+                const index = indexPart.replace(']', '')
+
+                if (
+                  !current ||
+                  typeof current !== 'object' ||
+                  !(arrayName in current)
+                ) {
+                  return undefined
+                }
+
+                const array = current[arrayName]
+                if (!Array.isArray(array)) {
+                  return undefined
+                }
+
+                if (index === '*') {
+                  // Wildcard: collect values from all array items
+                  if (partIndex === parts.length - 1) {
+                    // This is the last part, return the array itself
+                    return array
+                  } else {
+                    // There are more parts to process after the wildcard
+                    // Extract the remaining path
+                    const remainingPath = parts.slice(partIndex + 1).join('.')
+
+                    // Collect values from all array elements
+                    const values = []
+                    for (const item of array) {
+                      const value = extractValueByPath(
+                        item,
+                        remainingPath,
+                        false
+                      )
+                      if (value !== undefined) {
+                        values.push(value)
+                      }
                     }
-                });
-            }
-            
-            if (fsLastBtn) {
-                fsLastBtn.addEventListener('click', function() {
-                    try {
-                        currentIndex = jsonObjects.length - 1;
-                        updateView();
-                        updateNavButtons();
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Toggle fullscreen mode
-            function toggleFullscreen() {
-                isFullscreen = !isFullscreen;
-                
-                if (isFullscreen) {
-                    // Enter fullscreen
-                    codeContainer.classList.add('fullscreen-mode');
-                    fullscreenOverlay.style.display = 'block';
-                    fsNavigation.classList.add('active');
-                    fullscreenBtn.innerHTML = '×';
-                    fullscreenBtn.title = 'Exit fullscreen';
-                    document.body.style.overflow = 'hidden'; // Prevent scrolling
+
+                    return values
+                  }
                 } else {
-                    // Exit fullscreen
-                    codeContainer.classList.remove('fullscreen-mode');
-                    fullscreenOverlay.style.display = 'none';
-                    fsNavigation.classList.remove('active');
-                    fullscreenBtn.innerHTML = '⛶';
-                    fullscreenBtn.title = 'Toggle fullscreen';
-                    document.body.style.overflow = ''; // Restore scrolling
+                  const idx = parseInt(index)
+                  if (isNaN(idx) || idx < 0 || idx >= array.length) {
+                    return undefined
+                  }
+                  current = array[idx]
                 }
-                
-                // Re-apply syntax highlighting which might be affected by the DOM changes
-                setTimeout(() => {
-                    try {
-                        hljs.highlightElement(jsonContent);
-                    } catch (error) {
-                        console.error(`Fullscreen highlight error: ${error.message}`);
-                    }
-                }, 100);
-            }
-            
-            // Add ESC key handler for fullscreen
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape' && isFullscreen) {
-                    toggleFullscreen();
+              } else {
+                // Regular property access
+                if (
+                  !current ||
+                  typeof current !== 'object' ||
+                  !(part in current)
+                ) {
+                  return undefined
                 }
-            });
-            
-            // Error handling function
-            function showError(message) {
-                errorDisplay.textContent = `Error: ${message}`;
-                errorDisplay.style.display = 'block';
-                console.error(`Error: ${message}`);
+                current = current[part]
+              }
             }
-            
-            function hideError() {
-                errorDisplay.style.display = 'none';
+
+            return current
+          } catch (error) {
+            return undefined
+          }
+        }
+
+        function formatCsvValue(value, preserveJsonStrings = false) {
+          if (value === null || value === undefined) {
+            return ''
+          }
+
+          // Convert to string
+          let strValue
+          if (typeof value === 'object') {
+            strValue = JSON.stringify(value)
+          } else if (typeof value === 'string' && preserveJsonStrings) {
+            // Check if this looks like a JSON string and preserve it
+            const trimmed = value.trim()
+            if (
+              (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+              (trimmed.startsWith('[') && trimmed.endsWith(']'))
+            ) {
+              // Keep JSON strings as-is
+              strValue = value
+            } else {
+              strValue = String(value)
             }
-            
-            // Toggle word wrap
-            if (wordWrapToggle) {
-                wordWrapToggle.addEventListener('change', function() {
-                    try {
-                        if (this.checked) {
-                            jsonContent.parentElement.classList.add('pre-wrap');
-                        } else {
-                            jsonContent.parentElement.classList.remove('pre-wrap');
-                        }
-                    } catch (error) {
-                        showError(`Word wrap toggle error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Toggle auto-parse JSON strings
-            if (autoParseToggle) {
-                autoParseToggle.addEventListener('change', function() {
-                    try {
-                        // Re-render the current object when toggle changes
-                        if (jsonObjects.length > 0) {
-                            updateView();
-                        }
-                    } catch (error) {
-                        showError(`Auto-parse toggle error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Handle sort key selection
-            if (sortKeySelect) {
-                sortKeySelect.addEventListener('change', function() {
-                    try {
-                        sortJsonObjects();
-                        currentIndex = 0; // Reset to first object after sorting
-                        updateView();
-                        updateNavButtons();
-                    } catch (error) {
-                        showError(`Sort key selection error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Handle sort direction toggle
-            if (sortDirectionBtn) {
-                sortDirectionBtn.addEventListener('click', function() {
-                    try {
-                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                        sortDirectionIcon.textContent = sortDirection === 'asc' ? '↓' : '↑';
-                        sortJsonObjects();
-                        updateView();
-                    } catch (error) {
-                        showError(`Sort direction toggle error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Handle numeric sort toggle
-            if (numericSortToggle) {
-                numericSortToggle.addEventListener('change', function() {
-                    try {
-                        if (sortKeySelect.value) {
-                            sortJsonObjects();
-                            updateView();
-                        }
-                    } catch (error) {
-                        showError(`Numeric sort toggle error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Handle file selection
-            if (fileInput) {
-                fileInput.addEventListener('change', function(event) {
-                    try {
-                        handleFileSelection(event.target.files[0]);
-                    } catch (error) {
-                        showError(`File input error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Drag and drop functionality
-            if (dropArea) {
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    dropArea.addEventListener(eventName, preventDefaults, false);
-                });
-                
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    dropArea.addEventListener(eventName, highlight, false);
-                });
-                
-                ['dragleave', 'drop'].forEach(eventName => {
-                    dropArea.addEventListener(eventName, unhighlight, false);
-                });
-                
-                dropArea.addEventListener('drop', function(e) {
-                    try {
-                        handleDrop(e);
-                    } catch (error) {
-                        showError(`File drop error: ${error.message}`);
-                    }
-                }, false);
-            }
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            function highlight() {
-                dropArea.classList.add('highlight');
-            }
-            
-            function unhighlight() {
-                dropArea.classList.remove('highlight');
-            }
-            
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                
-                if (files.length) {
-                    handleFileSelection(files[0]);
+          } else {
+            strValue = String(value)
+          }
+
+          // Escape quotes by doubling them
+          strValue = strValue.replace(/"/g, '""')
+
+          // Wrap in quotes if contains comma, newline, or quote
+          if (
+            strValue.includes(',') ||
+            strValue.includes('\n') ||
+            strValue.includes('"')
+          ) {
+            strValue = `"${strValue}"`
+          }
+
+          return strValue
+        }
+
+        function processKeysForExport(selectedKeys) {
+          const finalKeys = []
+          const keyMapping = {} // Maps original key to processed keys
+
+          selectedKeys.forEach((key) => {
+            if (key.includes('[*]')) {
+              const mode = arrayKeyModes[key] || 'array'
+
+              if (mode === 'explode') {
+                // Find maximum array length for this path across all objects
+                let maxLength = 0
+                const baseKey = key.substring(0, key.indexOf('[*]'))
+
+                jsonObjects.forEach((obj) => {
+                  const value = extractValueByPath(
+                    obj,
+                    baseKey,
+                    !preserveJsonStringsToggle.checked
+                  )
+                  if (Array.isArray(value)) {
+                    maxLength = Math.max(maxLength, value.length)
+                  }
+                })
+
+                // Create individual column keys
+                const expandedKeys = []
+                for (let i = 0; i < maxLength; i++) {
+                  const expandedKey = key.replace('[*]', `[${i}]`)
+                  finalKeys.push(expandedKey)
+                  expandedKeys.push(expandedKey)
                 }
+                keyMapping[key] = { mode: 'explode', keys: expandedKeys }
+              } else {
+                // Join mode or array mode - keep the original key
+                finalKeys.push(key)
+                keyMapping[key] = { mode: mode, keys: [key] }
+              }
+            } else {
+              // Non-wildcard key
+              finalKeys.push(key)
+              keyMapping[key] = { mode: 'normal', keys: [key] }
             }
-            
-            function handleFileSelection(file) {
-                if (!file) return;
-                hideError();
-                
-                // Check file extension
-                const fileExtension = file.name.split('.').pop().toLowerCase();
-                if (fileExtension !== 'jsonl' && fileExtension !== 'json') {
-                    showError('Please select a .jsonl or .json file');
-                    return;
-                }
-                
-                fileName.textContent = file.name;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        // Parse JSONL (each line is a separate JSON object)
-                        const content = e.target.result;
-                        const lines = content.split('\n').filter(line => line.trim() !== '');
-                        
-                        // Parse each line with error handling
-                        rawJsonObjects = [];
-                        let parseErrors = 0;
-                        
-                        lines.forEach((line, index) => {
-                            try {
-                                const parsedLine = JSON.parse(line);
-                                rawJsonObjects.push(parsedLine);
-                            } catch (parseError) {
-                                parseErrors++;
-                                console.error(`Error parsing line ${index + 1}: ${parseError.message}`);
-                            }
-                        });
-                        
-                        if (parseErrors > 0) {
-                            showError(`${parseErrors} line(s) had JSON parsing errors and were skipped.`);
-                        }
-                        
-                        if (rawJsonObjects.length === 0) {
-                            showError('No valid JSON objects found in the file.');
-                            return;
-                        }
-                        
-                        // Clone the objects for original viewing
-                        jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
-                        
-                        // Collect available keys for sorting
-                        try {
-                            collectSortKeys();
-                        } catch (keyError) {
-                            showError(`Error analyzing object keys: ${keyError.message}`);
-                        }
-                        
-                        // Show viewer and display first object
-                        viewerContainer.style.display = 'block';
-                        viewerTitle.textContent = `${file.name} - JSON Objects`;
-                        currentIndex = 0;
-                        updateView();
-                        
-                        // Enable/disable navigation buttons
-                        updateNavButtons();
-                        
-                        // Show fullscreen button now that we have content
-                        if (fullscreenBtn) {
-                            fullscreenBtn.style.display = 'flex';
-                        }
-                    } catch (error) {
-                        showError(`Error processing the file: ${error.message}`);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    showError('Error reading the file.');
-                };
-                
-                reader.readAsText(file);
+          })
+
+          return { finalKeys, keyMapping }
+        }
+
+        function exportToCsv() {
+          try {
+            const selectedKeys = getSelectedKeys()
+
+            if (selectedKeys.length === 0) {
+              showExportStatus(
+                'Please select at least one key to export.',
+                'warning'
+              )
+              return
             }
-            
-            // Collect available keys for sorting
-            function collectSortKeys() {
-                availableKeys.clear();
-                
-                if (jsonObjects.length === 0) return;
-                
-                // Find all keys in the first 10 objects (or all if fewer)
-                const sampleSize = Math.min(10, jsonObjects.length);
-                
-                for (let i = 0; i < sampleSize; i++) {
-                    findObjectKeys(jsonObjects[i]);
-                }
-                
-                // Update the dropdown
-                updateSortKeyOptions();
+
+            if (jsonObjects.length === 0) {
+              showExportStatus('No data to export.', 'warning')
+              return
             }
-            
-            // Find all keys in an object (including nested ones)
-            function findObjectKeys(obj, prefix = '') {
-                if (!obj || typeof obj !== 'object') return;
-                
-                Object.keys(obj).forEach(key => {
-                    const fullKey = prefix ? `${prefix}.${key}` : key;
-                    availableKeys.add(fullKey);
-                    
-                    // Go one level deeper for nested objects (but not arrays)
-                    if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                        findObjectKeys(obj[key], fullKey);
-                    }
-                });
-            }
-            
-            // Update sort key dropdown options
-            function updateSortKeyOptions() {
-                // Clear current options except for the first one (None)
-                while (sortKeySelect.options.length > 1) {
-                    sortKeySelect.remove(1);
-                }
-                
-                // Add new options
-                Array.from(availableKeys).sort().forEach(key => {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.textContent = key;
-                    sortKeySelect.appendChild(option);
-                });
-                
-                // Enable/disable sort button
-                sortDirectionBtn.disabled = availableKeys.size === 0;
-            }
-            
-            // Navigation buttons
-            if (firstBtn) {
-                firstBtn.addEventListener('click', () => {
-                    try {
-                        currentIndex = 0;
-                        updateView();
-                        updateNavButtons();
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
-                    }
-                });
-            }
-            
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    try {
-                        if (currentIndex > 0) {
-                            currentIndex--;
-                            updateView();
-                            updateNavButtons();
-                        }
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
-                    }
-                });
-            }
-            
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    try {
-                        if (currentIndex < jsonObjects.length - 1) {
-                            currentIndex++;
-                            updateView();
-                            updateNavButtons();
-                        }
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
-                    }
-                });
-            }
-            
-            if (lastBtn) {
-                lastBtn.addEventListener('click', () => {
-                    try {
-                        currentIndex = jsonObjects.length - 1;
-                        updateView();
-                        updateNavButtons();
-                    } catch (error) {
-                        showError(`Navigation error: ${error.message}`);
-                    }
-                });
-            }
-            
-            // Keyboard navigation
-            document.addEventListener('keydown', function(event) {
-                if (viewerContainer.style.display !== 'block') return;
-                
+
+            const preserveJsonStrings = preserveJsonStringsToggle
+              ? preserveJsonStringsToggle.checked
+              : false
+            const shouldParseForExtraction = !preserveJsonStrings // Parse when preserve is OFF
+            const delimiter = delimiterInput.value || ', '
+
+            // Process keys based on array handling mode
+            const { finalKeys, keyMapping } = processKeysForExport(selectedKeys)
+
+            // Create CSV header
+            const csvRows = []
+            csvRows.push(
+              finalKeys.map((key) => formatCsvValue(key, false)).join(',')
+            )
+
+            // Track errors
+            let errorCount = 0
+            const errorDetails = []
+
+            // Process each object
+            jsonObjects.forEach((obj, index) => {
+              const row = []
+
+              selectedKeys.forEach((originalKey) => {
                 try {
-                    switch (event.key) {
-                        case 'ArrowLeft':
-                            if (currentIndex > 0) {
-                                currentIndex--;
-                                updateView();
-                                updateNavButtons();
-                            }
-                            break;
-                        case 'ArrowRight':
-                            if (currentIndex < jsonObjects.length - 1) {
-                                currentIndex++;
-                                updateView();
-                                updateNavButtons();
-                            }
-                            break;
-                        case 'Home':
-                            currentIndex = 0;
-                            updateView();
-                            updateNavButtons();
-                            break;
-                        case 'End':
-                            currentIndex = jsonObjects.length - 1;
-                            updateView();
-                            updateNavButtons();
-                            break;
+                  const mapping = keyMapping[originalKey]
+
+                  if (mapping.mode === 'explode') {
+                    // Handle exploded array columns
+                    mapping.keys.forEach((expandedKey) => {
+                      const value = extractValueByPath(
+                        obj,
+                        expandedKey,
+                        shouldParseForExtraction
+                      )
+                      row.push(formatCsvValue(value, preserveJsonStrings))
+                    })
+                  } else if (
+                    mapping.mode === 'join' &&
+                    originalKey.includes('[*]')
+                  ) {
+                    // Handle joined array values
+                    const values = extractValueByPath(
+                      obj,
+                      originalKey,
+                      shouldParseForExtraction
+                    )
+                    if (Array.isArray(values)) {
+                      // Deep flatten for multiple wildcards - flatten until we have no more arrays
+                      let valuesToJoin = values
+                      while (
+                        valuesToJoin.length > 0 &&
+                        valuesToJoin.every((v) => Array.isArray(v))
+                      ) {
+                        valuesToJoin = valuesToJoin.flat()
+                      }
+
+                      const joinedValue = valuesToJoin
+                        .map((v) =>
+                          typeof v === 'object' ? JSON.stringify(v) : String(v)
+                        )
+                        .join(delimiter)
+
+                      // Don't pass through formatCsvValue for joined strings, just escape if needed
+                      let finalValue = joinedValue
+                      if (
+                        joinedValue.includes(',') ||
+                        joinedValue.includes('\n') ||
+                        joinedValue.includes('"')
+                      ) {
+                        finalValue = `"${joinedValue.replace(/"/g, '""')}"`
+                      }
+                      row.push(finalValue)
+                    } else {
+                      row.push(formatCsvValue(values, preserveJsonStrings))
                     }
-                } catch (error) {
-                    showError(`Keyboard navigation error: ${error.message}`);
-                }
-            });
-            
-            // Function to try parsing JSON strings in an object
-            function parseJsonStrings(obj) {
-                if (!autoParseToggle || !autoParseToggle.checked) return obj;
-                
-                try {
-                    // Deep clone the object to avoid modifying the original
-                    const clone = JSON.parse(JSON.stringify(obj));
-                    
-                    // Recursively traverse the object and try to parse JSON strings
-                    function traverse(obj) {
-                        if (!obj || typeof obj !== 'object') return;
-                        
-                        Object.keys(obj).forEach(key => {
-                            // If it's a string, try to parse it as JSON
-                            if (typeof obj[key] === 'string') {
-                                let value = obj[key].trim();
-                                
-                                try {
-                                    // Check for various JSON string patterns
-                                    // First try: content wrapped in ```json{...}``` or ```{...}```
-                                    let match = value.match(/```(?:json)?(.*?)```/s);
-                                    if (match) {
-                                        value = match[1].trim();
-                                    }
-                                    
-                                    // Now try to parse it if it looks like JSON (starts and ends with {} or [])
-                                    if ((value.startsWith('{') && value.endsWith('}')) || 
-                                        (value.startsWith('[') && value.endsWith(']'))) {
-                                        const parsed = JSON.parse(value);
-                                        obj[key] = parsed;
-                                    }
-                                } catch (e) {
-                                    // If parsing fails, keep the original string
-                                }
-                            } else if (obj[key] && typeof obj[key] === 'object') {
-                                // Recursively traverse nested objects and arrays
-                                traverse(obj[key]);
-                            }
-                        });
+                  } else if (
+                    mapping.mode === 'array' &&
+                    originalKey.includes('[*]')
+                  ) {
+                    // Handle array mode - export as JSON array
+                    const values = extractValueByPath(
+                      obj,
+                      originalKey,
+                      shouldParseForExtraction
+                    )
+                    if (Array.isArray(values)) {
+                      // Deep flatten for multiple wildcards - flatten until we have no more arrays
+                      let arrayToExport = values
+                      while (
+                        arrayToExport.length > 0 &&
+                        arrayToExport.every((v) => Array.isArray(v))
+                      ) {
+                        arrayToExport = arrayToExport.flat()
+                      }
+
+                      const jsonArray = JSON.stringify(arrayToExport)
+                      // Properly escape for CSV
+                      let finalValue = jsonArray
+                      if (
+                        jsonArray.includes(',') ||
+                        jsonArray.includes('\n') ||
+                        jsonArray.includes('"')
+                      ) {
+                        finalValue = `"${jsonArray.replace(/"/g, '""')}"`
+                      }
+                      row.push(finalValue)
+                    } else {
+                      row.push(formatCsvValue(values, preserveJsonStrings))
                     }
-                    
-                    traverse(clone);
-                    return clone;
+                  } else {
+                    // Normal key
+                    const value = extractValueByPath(
+                      obj,
+                      originalKey,
+                      shouldParseForExtraction
+                    )
+                    row.push(formatCsvValue(value, preserveJsonStrings))
+                  }
                 } catch (error) {
-                    console.error(`Error in parseJsonStrings: ${error.message}`);
-                    return obj; // Return original if parsing fails
+                  errorCount++
+                  errorDetails.push(
+                    `Row ${index + 1}, Key "${originalKey}": ${error.message}`
+                  )
+                  // Add empty values for the number of columns this key represents
+                  const mapping = keyMapping[originalKey]
+                  for (let i = 0; i < mapping.keys.length; i++) {
+                    row.push('')
+                  }
                 }
+              })
+
+              csvRows.push(row.join(','))
+            })
+
+            // Create and download CSV
+            const csvContent = csvRows.join('\n')
+            const blob = new Blob([csvContent], {
+              type: 'text/csv;charset=utf-8;',
+            })
+            const link = document.createElement('a')
+
+            if (link.download !== undefined) {
+              const url = URL.createObjectURL(blob)
+              link.setAttribute('href', url)
+              link.setAttribute('download', 'exported_data.csv')
+              link.style.visibility = 'hidden'
+              document.body.appendChild(link)
+              link.click()
+              document.body.removeChild(link)
             }
-            
-            // Sort JSON objects based on selected key
-            function sortJsonObjects() {
-                try {
-                    const selectedKey = sortKeySelect.value;
-                    
-                    if (!selectedKey) {
-                        // No sorting, restore original order
-                        jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
-                        return;
-                    }
-                    
-                    // Split the key path for nested properties
-                    const keyPath = selectedKey.split('.');
-                    const sortAsNumber = numericSortToggle && numericSortToggle.checked;
-                    
-                    jsonObjects.sort((a, b) => {
-                        try {
-                            // Navigate to the nested property
-                            let valueA = a;
-                            let valueB = b;
-                            
-                            for (const key of keyPath) {
-                                valueA = valueA && typeof valueA === 'object' ? valueA[key] : undefined;
-                                valueB = valueB && typeof valueB === 'object' ? valueB[key] : undefined;
-                            }
-                            
-                            // Handle undefined values
-                            if (valueA === undefined && valueB === undefined) return 0;
-                            if (valueA === undefined) return sortDirection === 'asc' ? 1 : -1;
-                            if (valueB === undefined) return sortDirection === 'asc' ? -1 : 1;
-                            
-                            // Apply numeric conversion if requested
-                            if (sortAsNumber) {
-                                // Try to convert to numbers for comparison
-                                const numA = typeof valueA === 'string' ? parseFloat(valueA) : valueA;
-                                const numB = typeof valueB === 'string' ? parseFloat(valueB) : valueB;
-                                
-                                // Check if both are valid numbers after conversion
-                                if (!isNaN(numA) && !isNaN(numB)) {
-                                    return sortDirection === 'asc' ? numA - numB : numB - numA;
-                                }
-                                // Fall through to string comparison if conversion failed
-                            }
-                            
-                            // Compare based on types
-                            if (typeof valueA === 'string' && typeof valueB === 'string') {
-                                return sortDirection === 'asc' 
-                                    ? valueA.localeCompare(valueB) 
-                                    : valueB.localeCompare(valueA);
-                            } else {
-                                // For numbers, booleans, etc.
-                                return sortDirection === 'asc' 
-                                    ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0)
-                                    : (valueA > valueB ? -1 : valueA < valueB ? 1 : 0);
-                            }
-                        } catch (error) {
-                            console.error(`Error comparing objects: ${error.message}`);
-                            return 0; // Leave order unchanged on error
-                        }
-                    });
-                } catch (error) {
-                    showError(`Sorting error: ${error.message}`);
-                    // Restore original data on error
-                    jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects));
-                }
+
+            // Show status
+            if (errorCount > 0) {
+              showExportStatus(
+                `CSV exported successfully with ${errorCount} field extraction errors. ` +
+                  `${jsonObjects.length} rows and ${finalKeys.length} columns exported.`,
+                'warning'
+              )
+              console.warn('CSV export errors:', errorDetails)
+            } else {
+              showExportStatus(
+                `CSV exported successfully! ${jsonObjects.length} rows and ${finalKeys.length} columns exported.`,
+                'success'
+              )
             }
-            
-            // Update the view with current JSON object
-            function updateView() {
-                try {
-                    if (!jsonObjects.length || currentIndex < 0 || currentIndex >= jsonObjects.length) {
-                        jsonContent.textContent = "No valid JSON object to display.";
-                        return;
-                    }
-                    
-                    // Get the object for the current index
-                    const rawJsonObject = jsonObjects[currentIndex];
-                    
-                    // Apply JSON string parsing if enabled
-                    const processedJsonObject = parseJsonStrings(rawJsonObject);
-                    
-                    // Update display
-                    jsonContent.textContent = JSON.stringify(processedJsonObject, null, 2);
-                    
-                    try {
-                        hljs.highlightElement(jsonContent);
-                    } catch (highlightError) {
-                        console.error(`Syntax highlighting error: ${highlightError.message}`);
-                    }
-                    
-                    viewerCounter.textContent = `Object ${currentIndex + 1} of ${jsonObjects.length}`;
-                } catch (error) {
-                    showError(`Error displaying JSON: ${error.message}`);
-                }
+          } catch (error) {
+            showExportStatus(`Export failed: ${error.message}`, 'error')
+            console.error('CSV export error:', error)
+          }
+        }
+
+        function showExportStatus(message, type) {
+          exportStatus.textContent = message
+          exportStatus.className = `export-status ${type}`
+          exportStatus.style.display = 'block'
+
+          // Auto-hide after 10 seconds
+          setTimeout(() => {
+            exportStatus.style.display = 'none'
+          }, 10000)
+        }
+
+        // Modal functionality
+        function openCsvModal() {
+          if (csvModalOverlay) {
+            csvModalOverlay.classList.add('active')
+            document.body.style.overflow = 'hidden' // Prevent background scrolling
+
+            // Position the footer correctly within the modal
+            const exportContainer = document.getElementById(
+              'csv-export-container'
+            )
+            const footer = exportContainer.querySelector('.csv-export-footer')
+            if (footer && exportContainer) {
+              const rect = exportContainer.getBoundingClientRect()
+              footer.style.left = rect.left + 'px'
+              footer.style.width = rect.width + 'px'
+              footer.style.bottom = window.innerHeight - rect.bottom + 'px'
             }
-            
-            // Update navigation buttons enabled/disabled states
-            function updateNavButtons() {
-                try {
-                    if (firstBtn) firstBtn.disabled = currentIndex === 0;
-                    if (prevBtn) prevBtn.disabled = currentIndex === 0;
-                    if (nextBtn) nextBtn.disabled = currentIndex >= jsonObjects.length - 1;
-                    if (lastBtn) lastBtn.disabled = currentIndex >= jsonObjects.length - 1;
-                    
-                    // Update fullscreen navigation buttons too
-                    if (fsFirstBtn) fsFirstBtn.disabled = currentIndex === 0;
-                    if (fsPrevBtn) fsPrevBtn.disabled = currentIndex === 0;
-                    if (fsNextBtn) fsNextBtn.disabled = currentIndex >= jsonObjects.length - 1;
-                    if (fsLastBtn) fsLastBtn.disabled = currentIndex >= jsonObjects.length - 1;
-                    
-                    // Update fullscreen counter
-                    if (fsCounter) {
-                        fsCounter.textContent = `${currentIndex + 1} of ${jsonObjects.length}`;
-                    }
-                } catch (error) {
-                    console.error(`Button update error: ${error.message}`);
-                }
+          }
+        }
+
+        function closeCsvModal() {
+          if (csvModalOverlay) {
+            csvModalOverlay.classList.remove('active')
+            document.body.style.overflow = '' // Restore scrolling
+          }
+        }
+
+        // Event listeners for modal
+        if (openCsvModalBtn) {
+          openCsvModalBtn.addEventListener('click', openCsvModal)
+        }
+
+        if (csvModalClose) {
+          csvModalClose.addEventListener('click', closeCsvModal)
+        }
+
+        if (csvModalOverlay) {
+          // Close modal when clicking outside the container
+          csvModalOverlay.addEventListener('click', function (e) {
+            if (e.target === csvModalOverlay) {
+              closeCsvModal()
             }
-        });
+          })
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function (event) {
+          if (
+            event.key === 'Escape' &&
+            csvModalOverlay &&
+            csvModalOverlay.classList.contains('active')
+          ) {
+            closeCsvModal()
+          } else if (event.key === 'Escape' && isFullscreen) {
+            toggleFullscreen()
+          }
+        })
+
+        // Update footer position on window resize
+        window.addEventListener('resize', function () {
+          if (csvModalOverlay && csvModalOverlay.classList.contains('active')) {
+            const exportContainer = document.getElementById(
+              'csv-export-container'
+            )
+            const footer = exportContainer.querySelector('.csv-export-footer')
+            if (footer && exportContainer) {
+              const rect = exportContainer.getBoundingClientRect()
+              footer.style.left = rect.left + 'px'
+              footer.style.width = rect.width + 'px'
+              footer.style.bottom = window.innerHeight - rect.bottom + 'px'
+            }
+          }
+        })
+
+        // Event listeners for CSV export
+        if (selectAllKeysBtn) {
+          selectAllKeysBtn.addEventListener('click', function () {
+            // Select only visible checkboxes and update state
+            const checkboxes = keysGrid.querySelectorAll('.key-checkbox')
+            checkboxes.forEach((cb) => {
+              cb.checked = true
+              keySelectionState[cb.value] = true
+            })
+          })
+        }
+
+        if (selectNoneKeysBtn) {
+          selectNoneKeysBtn.addEventListener('click', function () {
+            // Deselect only visible checkboxes and update state
+            const checkboxes = keysGrid.querySelectorAll('.key-checkbox')
+            checkboxes.forEach((cb) => {
+              cb.checked = false
+              keySelectionState[cb.value] = false
+            })
+          })
+        }
+
+        // Search functionality
+        if (searchKeysInput) {
+          let searchTimeout
+          searchKeysInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout)
+            searchTimeout = setTimeout(() => {
+              const searchTerm = this.value.trim()
+              updateExportKeysUI(searchTerm)
+            }, 300) // Debounce for 300ms
+          })
+
+          searchKeysInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              const searchTerm = this.value.trim()
+              updateExportKeysUI(searchTerm)
+            }
+          })
+        }
+
+        if (searchClearBtn) {
+          searchClearBtn.addEventListener('click', function () {
+            if (searchKeysInput) {
+              searchKeysInput.value = ''
+              updateExportKeysUI('')
+            }
+          })
+        }
+
+        if (exportCsvBtn) {
+          exportCsvBtn.addEventListener('click', exportToCsv)
+        }
+
+        if (flattenNestedToggle) {
+          flattenNestedToggle.addEventListener('change', function () {
+            if (jsonObjects.length > 0) {
+              collectExportKeys()
+              // Preserve search term when updating
+              const searchTerm = searchKeysInput
+                ? searchKeysInput.value.trim()
+                : ''
+              updateExportKeysUI(searchTerm)
+            }
+          })
+        }
+
+        if (includeArraysToggle) {
+          includeArraysToggle.addEventListener('change', function () {
+            if (jsonObjects.length > 0) {
+              collectExportKeys()
+              // Preserve search term when updating
+              const searchTerm = searchKeysInput
+                ? searchKeysInput.value.trim()
+                : ''
+              updateExportKeysUI(searchTerm)
+            }
+          })
+        }
+
+        if (arrayDepthInput) {
+          arrayDepthInput.addEventListener('change', function () {
+            if (jsonObjects.length > 0) {
+              collectExportKeys()
+              // Preserve search term when updating
+              const searchTerm = searchKeysInput
+                ? searchKeysInput.value.trim()
+                : ''
+              updateExportKeysUI(searchTerm)
+            }
+          })
+        }
+
+        if (preserveJsonStringsToggle) {
+          preserveJsonStringsToggle.addEventListener('change', function () {
+            if (jsonObjects.length > 0) {
+              collectExportKeys()
+              // Preserve search term when updating
+              const searchTerm = searchKeysInput
+                ? searchKeysInput.value.trim()
+                : ''
+              updateExportKeysUI(searchTerm)
+            }
+          })
+        }
+
+        // Custom path functionality
+        if (addCustomPathBtn) {
+          addCustomPathBtn.addEventListener('click', addCustomPath)
+        }
+
+        if (customPathInput) {
+          customPathInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+              addCustomPath()
+            }
+          })
+        }
+
+        // Fullscreen toggle
+        if (fullscreenBtn) {
+          fullscreenBtn.addEventListener('click', function () {
+            try {
+              toggleFullscreen()
+            } catch (error) {
+              showError(`Fullscreen toggle error: ${error.message}`)
+            }
+          })
+
+          // Hide fullscreen and CSV export buttons initially if no content
+          fullscreenBtn.style.display = 'none'
+        }
+
+        if (openCsvModalBtn) {
+          openCsvModalBtn.style.display = 'none'
+        }
+
+        // Fullscreen navigation buttons
+        if (fsFirstBtn) {
+          fsFirstBtn.addEventListener('click', function () {
+            try {
+              currentIndex = 0
+              updateView()
+              updateNavButtons()
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        if (fsPrevBtn) {
+          fsPrevBtn.addEventListener('click', function () {
+            try {
+              if (currentIndex > 0) {
+                currentIndex--
+                updateView()
+                updateNavButtons()
+              }
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        if (fsNextBtn) {
+          fsNextBtn.addEventListener('click', function () {
+            try {
+              if (currentIndex < jsonObjects.length - 1) {
+                currentIndex++
+                updateView()
+                updateNavButtons()
+              }
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        if (fsLastBtn) {
+          fsLastBtn.addEventListener('click', function () {
+            try {
+              currentIndex = jsonObjects.length - 1
+              updateView()
+              updateNavButtons()
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        // Toggle fullscreen mode
+        function toggleFullscreen() {
+          isFullscreen = !isFullscreen
+
+          if (isFullscreen) {
+            // Enter fullscreen
+            codeContainer.classList.add('fullscreen-mode')
+            fullscreenOverlay.style.display = 'block'
+            fsNavigation.classList.add('active')
+            fullscreenBtn.innerHTML = '×'
+            fullscreenBtn.title = 'Exit fullscreen'
+            document.body.style.overflow = 'hidden' // Prevent scrolling
+          } else {
+            // Exit fullscreen
+            codeContainer.classList.remove('fullscreen-mode')
+            fullscreenOverlay.style.display = 'none'
+            fsNavigation.classList.remove('active')
+            fullscreenBtn.innerHTML = '⛶'
+            fullscreenBtn.title = 'Toggle fullscreen'
+            document.body.style.overflow = '' // Restore scrolling
+          }
+
+          // Re-apply syntax highlighting which might be affected by the DOM changes
+          setTimeout(() => {
+            try {
+              hljs.highlightElement(jsonContent)
+            } catch (error) {
+              console.error(`Fullscreen highlight error: ${error.message}`)
+            }
+          }, 100)
+        }
+
+        // Add ESC key handler for fullscreen (integrated above)
+
+        // Error handling function
+        function showError(message) {
+          errorDisplay.textContent = `Error: ${message}`
+          errorDisplay.style.display = 'block'
+          console.error(`Error: ${message}`)
+        }
+
+        function hideError() {
+          errorDisplay.style.display = 'none'
+        }
+
+        // Toggle word wrap
+        if (wordWrapToggle) {
+          wordWrapToggle.addEventListener('change', function () {
+            try {
+              if (this.checked) {
+                jsonContent.parentElement.classList.add('pre-wrap')
+              } else {
+                jsonContent.parentElement.classList.remove('pre-wrap')
+              }
+            } catch (error) {
+              showError(`Word wrap toggle error: ${error.message}`)
+            }
+          })
+        }
+
+        // Toggle auto-parse JSON strings
+        if (autoParseToggle) {
+          autoParseToggle.addEventListener('change', function () {
+            try {
+              // Re-render the current object when toggle changes
+              if (jsonObjects.length > 0) {
+                updateView()
+              }
+            } catch (error) {
+              showError(`Auto-parse toggle error: ${error.message}`)
+            }
+          })
+        }
+
+        // Handle sort key selection
+        if (sortKeySelect) {
+          sortKeySelect.addEventListener('change', function () {
+            try {
+              sortJsonObjects()
+              currentIndex = 0 // Reset to first object after sorting
+              updateView()
+              updateNavButtons()
+            } catch (error) {
+              showError(`Sort key selection error: ${error.message}`)
+            }
+          })
+        }
+
+        // Handle sort direction toggle
+        if (sortDirectionBtn) {
+          sortDirectionBtn.addEventListener('click', function () {
+            try {
+              sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'
+              sortDirectionIcon.textContent =
+                sortDirection === 'asc' ? '↓' : '↑'
+              sortJsonObjects()
+              updateView()
+            } catch (error) {
+              showError(`Sort direction toggle error: ${error.message}`)
+            }
+          })
+        }
+
+        // Handle numeric sort toggle
+        if (numericSortToggle) {
+          numericSortToggle.addEventListener('change', function () {
+            try {
+              if (sortKeySelect.value) {
+                sortJsonObjects()
+                updateView()
+              }
+            } catch (error) {
+              showError(`Numeric sort toggle error: ${error.message}`)
+            }
+          })
+        }
+
+        // Handle file selection
+        if (fileInput) {
+          fileInput.addEventListener('change', function (event) {
+            try {
+              handleFileSelection(event.target.files[0])
+            } catch (error) {
+              showError(`File input error: ${error.message}`)
+            }
+          })
+        }
+
+        // Drag and drop functionality
+        if (dropArea) {
+          ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(
+            (eventName) => {
+              dropArea.addEventListener(eventName, preventDefaults, false)
+            }
+          )
+          ;['dragenter', 'dragover'].forEach((eventName) => {
+            dropArea.addEventListener(eventName, highlight, false)
+          })
+          ;['dragleave', 'drop'].forEach((eventName) => {
+            dropArea.addEventListener(eventName, unhighlight, false)
+          })
+
+          dropArea.addEventListener(
+            'drop',
+            function (e) {
+              try {
+                handleDrop(e)
+              } catch (error) {
+                showError(`File drop error: ${error.message}`)
+              }
+            },
+            false
+          )
+        }
+
+        function preventDefaults(e) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+
+        function highlight() {
+          dropArea.classList.add('highlight')
+        }
+
+        function unhighlight() {
+          dropArea.classList.remove('highlight')
+        }
+
+        function handleDrop(e) {
+          const dt = e.dataTransfer
+          const files = dt.files
+
+          if (files.length) {
+            handleFileSelection(files[0])
+          }
+        }
+
+        function handleFileSelection(file) {
+          if (!file) return
+          hideError()
+
+          // Check file extension
+          const fileExtension = file.name.split('.').pop().toLowerCase()
+          if (fileExtension !== 'jsonl' && fileExtension !== 'json') {
+            showError('Please select a .jsonl or .json file')
+            return
+          }
+
+          fileName.textContent = file.name
+
+          const reader = new FileReader()
+          reader.onload = function (e) {
+            try {
+              // Parse JSONL (each line is a separate JSON object)
+              const content = e.target.result
+              const lines = content
+                .split('\n')
+                .filter((line) => line.trim() !== '')
+
+              // Parse each line with error handling
+              rawJsonObjects = []
+              let parseErrors = 0
+
+              lines.forEach((line, index) => {
+                try {
+                  const parsedLine = JSON.parse(line)
+                  rawJsonObjects.push(parsedLine)
+                } catch (parseError) {
+                  parseErrors++
+                  console.error(
+                    `Error parsing line ${index + 1}: ${parseError.message}`
+                  )
+                }
+              })
+
+              if (parseErrors > 0) {
+                showError(
+                  `${parseErrors} line(s) had JSON parsing errors and were skipped.`
+                )
+              }
+
+              if (rawJsonObjects.length === 0) {
+                showError('No valid JSON objects found in the file.')
+                return
+              }
+
+              // Clone the objects for original viewing
+              jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects))
+
+              // Reset array key modes
+              arrayKeyModes = {}
+              keySelectionState = {}
+
+              // Collect available keys for sorting
+              try {
+                collectSortKeys()
+              } catch (keyError) {
+                showError(`Error analyzing object keys: ${keyError.message}`)
+              }
+
+              // Collect keys for CSV export
+              try {
+                collectExportKeys()
+                updateExportKeysUI()
+              } catch (exportKeyError) {
+                showError(
+                  `Error analyzing export keys: ${exportKeyError.message}`
+                )
+              }
+
+              // Show viewer section
+              viewerContainer.style.display = 'block'
+              viewerTitle.textContent = `${file.name} - JSON Objects`
+              currentIndex = 0
+              updateView()
+
+              // Enable/disable navigation buttons
+              updateNavButtons()
+
+              // Show fullscreen button and CSV export button now that we have content
+              if (fullscreenBtn) {
+                fullscreenBtn.style.display = 'flex'
+              }
+              if (openCsvModalBtn) {
+                openCsvModalBtn.style.display = 'flex'
+              }
+            } catch (error) {
+              showError(`Error processing the file: ${error.message}`)
+            }
+          }
+
+          reader.onerror = function () {
+            showError('Error reading the file.')
+          }
+
+          reader.readAsText(file)
+        }
+
+        // Collect available keys for sorting
+        function collectSortKeys() {
+          availableKeys.clear()
+
+          if (jsonObjects.length === 0) return
+
+          // Find all keys in the first 10 objects (or all if fewer)
+          const sampleSize = Math.min(10, jsonObjects.length)
+
+          for (let i = 0; i < sampleSize; i++) {
+            findObjectKeys(jsonObjects[i])
+          }
+
+          // Update the dropdown
+          updateSortKeyOptions()
+        }
+
+        // Find all keys in an object (including nested ones)
+        function findObjectKeys(obj, prefix = '') {
+          if (!obj || typeof obj !== 'object') return
+
+          Object.keys(obj).forEach((key) => {
+            const fullKey = prefix ? `${prefix}.${key}` : key
+            availableKeys.add(fullKey)
+
+            // Go one level deeper for nested objects (but not arrays)
+            if (
+              obj[key] &&
+              typeof obj[key] === 'object' &&
+              !Array.isArray(obj[key])
+            ) {
+              findObjectKeys(obj[key], fullKey)
+            }
+          })
+        }
+
+        // Update sort key dropdown options
+        function updateSortKeyOptions() {
+          // Clear current options except for the first one (None)
+          while (sortKeySelect.options.length > 1) {
+            sortKeySelect.remove(1)
+          }
+
+          // Add new options
+          Array.from(availableKeys)
+            .sort()
+            .forEach((key) => {
+              const option = document.createElement('option')
+              option.value = key
+              option.textContent = key
+              sortKeySelect.appendChild(option)
+            })
+
+          // Enable/disable sort button
+          sortDirectionBtn.disabled = availableKeys.size === 0
+        }
+
+        // Navigation buttons
+        if (firstBtn) {
+          firstBtn.addEventListener('click', () => {
+            try {
+              currentIndex = 0
+              updateView()
+              updateNavButtons()
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        if (prevBtn) {
+          prevBtn.addEventListener('click', () => {
+            try {
+              if (currentIndex > 0) {
+                currentIndex--
+                updateView()
+                updateNavButtons()
+              }
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener('click', () => {
+            try {
+              if (currentIndex < jsonObjects.length - 1) {
+                currentIndex++
+                updateView()
+                updateNavButtons()
+              }
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        if (lastBtn) {
+          lastBtn.addEventListener('click', () => {
+            try {
+              currentIndex = jsonObjects.length - 1
+              updateView()
+              updateNavButtons()
+            } catch (error) {
+              showError(`Navigation error: ${error.message}`)
+            }
+          })
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function (event) {
+          if (viewerContainer.style.display !== 'block') return
+
+          try {
+            switch (event.key) {
+              case 'ArrowLeft':
+                if (currentIndex > 0) {
+                  currentIndex--
+                  updateView()
+                  updateNavButtons()
+                }
+                break
+              case 'ArrowRight':
+                if (currentIndex < jsonObjects.length - 1) {
+                  currentIndex++
+                  updateView()
+                  updateNavButtons()
+                }
+                break
+              case 'Home':
+                currentIndex = 0
+                updateView()
+                updateNavButtons()
+                break
+              case 'End':
+                currentIndex = jsonObjects.length - 1
+                updateView()
+                updateNavButtons()
+                break
+            }
+          } catch (error) {
+            showError(`Keyboard navigation error: ${error.message}`)
+          }
+        })
+
+        // Function to try parsing JSON strings in an object
+        function parseJsonStrings(obj) {
+          if (!autoParseToggle || !autoParseToggle.checked) return obj
+
+          try {
+            // Deep clone the object to avoid modifying the original
+            const clone = JSON.parse(JSON.stringify(obj))
+
+            // Recursively traverse the object and try to parse JSON strings
+            function traverse(obj) {
+              if (!obj || typeof obj !== 'object') return
+
+              Object.keys(obj).forEach((key) => {
+                // If it's a string, try to parse it as JSON
+                if (typeof obj[key] === 'string') {
+                  let value = obj[key].trim()
+
+                  try {
+                    // Check for various JSON string patterns
+                    // First try: content wrapped in ```json{...}``` or ```{...}```
+                    let match = value.match(/```(?:json)?(.*?)```/s)
+                    if (match) {
+                      value = match[1].trim()
+                    }
+
+                    // Now try to parse it if it looks like JSON (starts and ends with {} or [])
+                    if (
+                      (value.startsWith('{') && value.endsWith('}')) ||
+                      (value.startsWith('[') && value.endsWith(']'))
+                    ) {
+                      const parsed = JSON.parse(value)
+                      obj[key] = parsed
+                    }
+                  } catch (e) {
+                    // If parsing fails, keep the original string
+                  }
+                } else if (obj[key] && typeof obj[key] === 'object') {
+                  // Recursively traverse nested objects and arrays
+                  traverse(obj[key])
+                }
+              })
+            }
+
+            traverse(clone)
+            return clone
+          } catch (error) {
+            console.error(`Error in parseJsonStrings: ${error.message}`)
+            return obj // Return original if parsing fails
+          }
+        }
+
+        // Sort JSON objects based on selected key
+        function sortJsonObjects() {
+          try {
+            const selectedKey = sortKeySelect.value
+
+            if (!selectedKey) {
+              // No sorting, restore original order
+              jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects))
+              return
+            }
+
+            // Split the key path for nested properties
+            const keyPath = selectedKey.split('.')
+            const sortAsNumber = numericSortToggle && numericSortToggle.checked
+
+            jsonObjects.sort((a, b) => {
+              try {
+                // Navigate to the nested property
+                let valueA = a
+                let valueB = b
+
+                for (const key of keyPath) {
+                  valueA =
+                    valueA && typeof valueA === 'object'
+                      ? valueA[key]
+                      : undefined
+                  valueB =
+                    valueB && typeof valueB === 'object'
+                      ? valueB[key]
+                      : undefined
+                }
+
+                // Handle undefined values
+                if (valueA === undefined && valueB === undefined) return 0
+                if (valueA === undefined)
+                  return sortDirection === 'asc' ? 1 : -1
+                if (valueB === undefined)
+                  return sortDirection === 'asc' ? -1 : 1
+
+                // Apply numeric conversion if requested
+                if (sortAsNumber) {
+                  // Try to convert to numbers for comparison
+                  const numA =
+                    typeof valueA === 'string' ? parseFloat(valueA) : valueA
+                  const numB =
+                    typeof valueB === 'string' ? parseFloat(valueB) : valueB
+
+                  // Check if both are valid numbers after conversion
+                  if (!isNaN(numA) && !isNaN(numB)) {
+                    return sortDirection === 'asc' ? numA - numB : numB - numA
+                  }
+                  // Fall through to string comparison if conversion failed
+                }
+
+                // Compare based on types
+                if (typeof valueA === 'string' && typeof valueB === 'string') {
+                  return sortDirection === 'asc'
+                    ? valueA.localeCompare(valueB)
+                    : valueB.localeCompare(valueA)
+                } else {
+                  // For numbers, booleans, etc.
+                  return sortDirection === 'asc'
+                    ? valueA < valueB
+                      ? -1
+                      : valueA > valueB
+                        ? 1
+                        : 0
+                    : valueA > valueB
+                      ? -1
+                      : valueA < valueB
+                        ? 1
+                        : 0
+                }
+              } catch (error) {
+                console.error(`Error comparing objects: ${error.message}`)
+                return 0 // Leave order unchanged on error
+              }
+            })
+          } catch (error) {
+            showError(`Sorting error: ${error.message}`)
+            // Restore original data on error
+            jsonObjects = JSON.parse(JSON.stringify(rawJsonObjects))
+          }
+        }
+
+        // Update the view with current JSON object
+        function updateView() {
+          try {
+            if (
+              !jsonObjects.length ||
+              currentIndex < 0 ||
+              currentIndex >= jsonObjects.length
+            ) {
+              jsonContent.textContent = 'No valid JSON object to display.'
+              return
+            }
+
+            // Get the object for the current index
+            const rawJsonObject = jsonObjects[currentIndex]
+
+            // Apply JSON string parsing if enabled
+            const processedJsonObject = parseJsonStrings(rawJsonObject)
+
+            // Update display
+            jsonContent.textContent = JSON.stringify(
+              processedJsonObject,
+              null,
+              2
+            )
+
+            try {
+              hljs.highlightElement(jsonContent)
+            } catch (highlightError) {
+              console.error(
+                `Syntax highlighting error: ${highlightError.message}`
+              )
+            }
+
+            viewerCounter.textContent = `Object ${currentIndex + 1} of ${jsonObjects.length}`
+          } catch (error) {
+            showError(`Error displaying JSON: ${error.message}`)
+          }
+        }
+
+        // Update navigation buttons enabled/disabled states
+        function updateNavButtons() {
+          try {
+            if (firstBtn) firstBtn.disabled = currentIndex === 0
+            if (prevBtn) prevBtn.disabled = currentIndex === 0
+            if (nextBtn)
+              nextBtn.disabled = currentIndex >= jsonObjects.length - 1
+            if (lastBtn)
+              lastBtn.disabled = currentIndex >= jsonObjects.length - 1
+
+            // Update fullscreen navigation buttons too
+            if (fsFirstBtn) fsFirstBtn.disabled = currentIndex === 0
+            if (fsPrevBtn) fsPrevBtn.disabled = currentIndex === 0
+            if (fsNextBtn)
+              fsNextBtn.disabled = currentIndex >= jsonObjects.length - 1
+            if (fsLastBtn)
+              fsLastBtn.disabled = currentIndex >= jsonObjects.length - 1
+
+            // Update fullscreen counter
+            if (fsCounter) {
+              fsCounter.textContent = `${currentIndex + 1} of ${jsonObjects.length}`
+            }
+          } catch (error) {
+            console.error(`Button update error: ${error.message}`)
+          }
+        }
+      })
     </script>
-</body>
+  </body>
 </html>
